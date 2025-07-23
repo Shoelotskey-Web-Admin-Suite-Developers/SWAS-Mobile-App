@@ -5,7 +5,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  type?: 'default' | 'title' | 'titleLarge' | 'titleSmall' | 'subtitle1' | 'subtitle2' |'link' |'option' |'button';
 };
 
 export function ThemedText({
@@ -23,9 +23,13 @@ export function ThemedText({
         { color },
         type === 'default' ? styles.default : undefined,
         type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
+        type === 'titleLarge' ? styles.titleLarge : undefined,
+        type === 'titleSmall' ? styles.titleSmall : undefined,
+        type === 'subtitle1' ? styles.subtitle1 : undefined,
+        type === 'subtitle2' ? styles.subtitle2 : undefined,
         type === 'link' ? styles.link : undefined,
+        type === 'option' ? styles.option : undefined,
+        type === 'button' ? styles.button : undefined,
         style,
       ]}
       {...rest}
@@ -35,26 +39,47 @@ export function ThemedText({
 
 const styles = StyleSheet.create({
   default: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
+    fontFamily: 'Inter',
+    fontSize: 14,
+    lineHeight: 18,
   },
   title: {
+    fontFamily: 'InterExtraBold',
     fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+    lineHeight: 40,
   },
-  subtitle: {
+  titleLarge: {
+    fontFamily: 'InterExtraBold',
+    fontSize: 48,
+    lineHeight: 52,
+  },
+  titleSmall: {
+    fontFamily: 'InterExtraBold',
     fontSize: 20,
-    fontWeight: 'bold',
+    lineHeight: 25,
+  },
+  subtitle1: {
+    fontFamily: 'InterBold',
+    fontSize: 25,
+  },
+  subtitle2: {
+    fontFamily: 'InterBold',
+    fontSize: 25,
   },
   link: {
-    lineHeight: 30,
+    fontFamily: 'Inter',
     fontSize: 16,
-    color: '#0a7ea4',
+    lineHeight: 30,
+    color: '#D11315',
+  },
+  option: {
+    fontFamily: 'Inter',
+    fontSize: 10,
+    lineHeight: 13,
+  },
+  button: {
+    fontFamily: 'InterExtraBold',
+    fontSize: 18,
+    lineHeight: 25,
   },
 });

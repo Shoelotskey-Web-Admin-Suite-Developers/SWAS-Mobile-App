@@ -29,8 +29,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/SWAS-Mobile-Logo-Black.png",
+          "imageWidth": 220,
+          "imageHeight": 280,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }

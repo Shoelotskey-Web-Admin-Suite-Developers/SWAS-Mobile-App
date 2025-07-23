@@ -25,32 +25,25 @@
 // }
 
 // index.tsx
-import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { View, Text } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Redirect, Stack } from 'expo-router';
 
-const Stack = createStackNavigator();
+export default function Index() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
-function RedirectScreen({ navigation }: any) {
   useEffect(() => {
-    navigation.replace('Welcome');
-  }, [navigation]);
+    // auth not yet set, hardcoded to false
+    setIsLoggedIn(false);
+  }, []);
+
+  if (isLoggedIn === null) return null; // wait for useEffect
 
   return (
-    <View>
-      <Text>Redirecting...</Text>
-    </View>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <Redirect href="./welcome/welcome" />
+    </>
   );
 }
 
-export default function App() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Redirect">
-        <Stack.Screen name="Redirect" component={RedirectScreen} options={{ headerShown: false }} />
-        <Stack.Screen name="Welcome" component={Welcome} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-}
+

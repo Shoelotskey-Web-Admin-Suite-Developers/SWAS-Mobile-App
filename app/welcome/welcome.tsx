@@ -1,120 +1,108 @@
 import React from 'react';
-import { View, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, Dimensions, ImageBackground } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
+import { Stack, router } from 'expo-router';
 
-const { width } = Dimensions.get('window');
+const { width  } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   return (
-    <View style={styles.container}>
-      {/* Top Image Section with Logo */}
-      <View style={styles.imageSection}>
-        <Image
-          source={require('@/assets/images/welcome-image.png')}
-          style={styles.backgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.overlayContent}>
-          <Image
-            source={require('@/assets/images/SWAS-Mobile-Logo-White.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <ThemedText type="subtitle" style={styles.subtitle}>
-            Customer Loyalty App
-          </ThemedText>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ImageBackground
+        source={require('@/assets/images/welcome-bg.png')}
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <View style={styles.container}>
+          {/* Top Section */}
+          <View style={styles.topSection}>
+            <Image
+              source={require('@/assets/images/SWAS-Mobile-Logo-White.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Bottom Section */}
+          <View style={styles.bottomSection}>
+            <ThemedText type="title" style={[styles.welcomeText, { color: '#000' }]}>
+              WELCOME
+            </ThemedText>
+            <ThemedText type="default" style={[styles.description, { color: '#000' }]}>
+              Keep your kicks fresh, track your shoe cleaning services here
+            </ThemedText>
+
+            <TouchableOpacity style={styles.loginButton} onPress={() => router.push( '/welcome/(auth)/login')}>
+                <ThemedText type="button" style={styles.loginText}>Login</ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/welcome/(auth)/register')}>
+                <ThemedText type="button2" style={styles.signUpText}>Sign Up</ThemedText>
+            </TouchableOpacity>
+
+          </View>
         </View>
-      </View>
-
-      {/* Bottom Curved Card */}
-      <View style={styles.curvedCard}>
-        <ThemedText type="title" style={styles.welcomeText}>
-          WELCOME
-        </ThemedText>
-        <ThemedText type="default" style={styles.description}>
-          Keep your kicks fresh, track your shoe cleaning services here
-        </ThemedText>
-
-        <TouchableOpacity style={styles.loginButton}>
-          <ThemedText type="defaultSemiBold" style={styles.loginText}>
-            Login
-          </ThemedText>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.signUpButton}>
-          <ThemedText type="defaultSemiBold" style={styles.signUpText}>
-            Sign Up
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
-    </View>
+      </ImageBackground>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    width,
+    minHeight: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    justifyContent: 'space-between',
+    paddingTop: 80,
+    paddingBottom: 115,
+    paddingHorizontal: 20,
   },
-  imageSection: {
-    flex: 1.2,
-    justifyContent: 'center',
+  topSection: {
     alignItems: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  backgroundImage: {
-    position: 'absolute',
-    width: width * 1.25, // 125% of screen width
-    height: '130%',
-    top: '-15%',
-    left: '-12.5%',
-  },
-  overlayContent: {
-    zIndex: 1,
-    alignItems: 'center',
-    paddingTop: 60,
   },
   logo: {
     width: 220,
-    height: 80,
+    height: 180,
   },
   subtitle: {
-    marginTop: 10,
     color: '#fff',
+    marginTop: 10,
   },
-  curvedCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-    padding: 30,
+  bottomSection: {
     alignItems: 'center',
-    marginTop: -30,
+    gap: 12,
   },
   welcomeText: {
-    marginBottom: 10,
+    marginBottom: 0,
   },
   description: {
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 35,
+    marginTop: -10,
+    width: 200,
   },
   loginButton: {
+    alignItems: 'center',
     backgroundColor: '#cc0000',
-    borderRadius: 20,
+    borderRadius: 25,
     paddingVertical: 12,
     paddingHorizontal: 50,
-    marginBottom: 15,
+    width: 200,
   },
   loginText: {
     color: '#fff',
   },
   signUpButton: {
+    alignItems: 'center',
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 25,
     paddingVertical: 12,
-    paddingHorizontal: 50,
+    width: 200,
   },
   signUpText: {
     color: '#333',

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -8,49 +8,63 @@ import {
 } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import Svg, { Path } from 'react-native-svg';
+import Animated, {
+  useSharedValue,
+  withTiming,
+  useAnimatedProps,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 const height = 80;
 
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
 const CustomBottomBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
-    const tabCount = state.routes.length;
-    const activeIndex = state.index;
-    const tabWidth = width / tabCount;
-    // Manually define the centerX for each tab
-    const tabCenters = [
-    width * 0.173,  // Position for tab 0 (e.g. left-most)
-    width * 0.388,  // Position for tab 1
-    width * 0.605,  // Position for tab 2
-    width * 0.823,  // Position for tab 3 (e.g. right-most)
-    ];
+  const tabCount = state.routes.length;
+  const activeIndex = state.index;
 
-    // Set centerX based on active tab
-    const centerX = tabCenters[activeIndex];
+  const tabCenters = [
+    width * 0.173,
+    width * 0.388,
+    width * 0.605,
+    width * 0.823,
+  ];
 
-    const leftEdge = centerX - 60;
+  const centerX = useSharedValue(tabCenters[activeIndex]);
+
+  useEffect(() => {
+    centerX.value = withTiming(tabCenters[activeIndex], { duration: 300 });
+  }, [activeIndex]);
+
+  const animatedProps = useAnimatedProps(() => {
+    const cx = centerX.value;
+    const leftEdge = cx - 60;
     const leftCurveStart = leftEdge + 40;
-    const leftCurveControl = centerX - 35;
+    const leftCurveControl = cx - 35;
 
-    const rightCurveControl = centerX + 35;
-    const rightCurveEnd = centerX + 60 - 40;
-    const rightEdge = centerX + 60;
+    const rightCurveControl = cx + 35;
+    const rightCurveEnd = cx + 60 - 40;
+    const rightEdge = cx + 60;
+
+    return {
+      d: `
+        M0,0 
+        H${leftEdge} 
+        C${leftCurveStart},0 ${leftCurveControl},40 ${cx},40
+        C${rightCurveControl},40 ${rightCurveEnd},0 ${rightEdge},0 
+        H${width} 
+        V${height} 
+        H0 
+        Z
+      `,
+    };
+  });
 
   return (
     <View style={styles.wrapper}>
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={styles.svg}>
-        <Path
-          fill="#D50000"
-          d={`
-            M0,0 
-            H${leftEdge} 
-            C${leftCurveStart},0 ${leftCurveControl},40 ${centerX},40
-            C${rightCurveControl},40 ${rightCurveEnd},0 ${rightEdge},0 
-            H${width} 
-            V${height} 
-            H0 
-            Z
-          `}
-        />
+        <AnimatedPath fill="#D50000" animatedProps={animatedProps} />
       </Svg>
 
       <View style={styles.tabContainer}>
@@ -73,22 +87,24 @@ const CustomBottomBar = ({ state, descriptors, navigation }: BottomTabBarProps) 
           const Icon = options.tabBarIcon;
           const label = options.tabBarLabel ?? options.title ?? route.name;
 
+          // Animate icon elevation
+          const animatedIconStyle = useAnimatedStyle(() => ({
+            transform: [{ translateY: withTiming(isFocused ? -10 : 0, { duration: 300 }) }],
+          }));
+
           return (
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
-              style={[
-                    styles.tabButton,
-                    isFocused && styles.activeTabButton,
-                ]}
+              style={styles.tabButton}
               activeOpacity={0.8}
             >
-                <View style={[styles.iconWrapper, isFocused && styles.iconElevated]}>
-                    {Icon && Icon({ color: isFocused ? '#D50000' : '#ccc', focused: isFocused })}
-                </View>
-                <Text style={[styles.label, isFocused && styles.labelFocused]}>
-                    {label}
-                </Text>
+              <Animated.View style={animatedIconStyle}>
+                {Icon && Icon({ color: isFocused ? '#D50000' : '#ccc', focused: isFocused })}
+              </Animated.View>
+              <Text style={[styles.label, isFocused && styles.labelFocused]}>
+                {label}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -98,48 +114,40 @@ const CustomBottomBar = ({ state, descriptors, navigation }: BottomTabBarProps) 
 };
 
 const styles = StyleSheet.create({
-    iconWrapper: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        },
-
-    iconElevated: {
-        transform: [{ translateY: -10 }],
-        },
-    wrapper: {
-        position: 'absolute',
-        bottom: 0,
-        width: '100%',
-        height,
-        alignItems: 'center',
-        justifyContent: 'flex-end',
-    },
-    svg: {
-        position: 'absolute',
-        bottom: 0,
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        height,
-        width: '100%',
-        justifyContent: 'space-evenly',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-    },
-    tabButton: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingBottom: 10,
-        width: 70,
-    },
-    label: {
-        fontSize: 10,
-        color: '#ccc',
-        marginTop: 4,
-    },
-    labelFocused: {
-        color: '#fff',
-    },
+  wrapper: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    height,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  svg: {
+    position: 'absolute',
+    bottom: 0,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    height,
+    width: '100%',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  tabButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 10,
+    width: 70,
+  },
+  label: {
+    fontSize: 10,
+    color: '#ccc',
+    marginTop: 4,
+  },
+  labelFocused: {
+    color: '#fff',
+  },
 });
 
 export default CustomBottomBar;

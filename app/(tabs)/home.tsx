@@ -142,6 +142,7 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
     padding: 0,
+    backgroundColor: 'white',
   },
   topContainer: {
     justifyContent: 'space-between',

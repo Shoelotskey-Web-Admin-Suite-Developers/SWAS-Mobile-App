@@ -1,21 +1,22 @@
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Image,
-    ImageBackground,
-    Platform,
-    Pressable,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View
+  Image,
+  ImageBackground,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
 
   // Birthday date picker state
   const [birthday, setBirthday] = useState<Date | undefined>();
@@ -47,20 +48,22 @@ export default function LoginScreen() {
           </ThemedText>
 
           <ThemedText type="titleSmall" style={styles.label}>Name</ThemedText>
-          <TextInput
-            style={styles.input}
-            placeholder="First Name"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Last Name"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
+          <ThemedView>
+            <TextInput
+              style={styles.input}
+              placeholder="First Name"
+              autoCapitalize="none"
+              value={firstName}
+              onChangeText={setFirstName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Last Name"
+              autoCapitalize="none"
+              value={lastName}
+              onChangeText={setLastName}
+            />
+          </ThemedView>
 
           <ThemedText type="titleSmall" style={styles.label}>Birthday</ThemedText>
           <Pressable onPress={() => setShowPicker(true)}>
@@ -92,9 +95,8 @@ export default function LoginScreen() {
             <ThemedText type="button" style={{ color: 'white' }}>Enter</ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.link} onPress={() => router.push('/register')}>
-            <ThemedText type='default'>Don't have an account? </ThemedText>
-            <ThemedText type='defaultSemiBold'>Click here to sign up</ThemedText>
+          <TouchableOpacity style={styles.link} onPress={() => router.push('/welcome/(auth)/register')}>
+            <ThemedText type='default'>Don't have an account?{'\n'}Click here to sign up</ThemedText>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -116,18 +118,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   input: {
-    borderColor: '#E3E3E8',
-    borderWidth: 1,
+    borderColor: '#212934',
+    borderBottomWidth: 1,
     padding: 10,
     marginBottom: 15,
     borderRadius: 6,
     fontFamily: 'Quicksand',
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
   },
   button: {
-    backgroundColor: '#145E4D',
+    backgroundColor: '#CE1616',
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 50,
     alignItems: 'center',
     marginTop: 55,
     elevation: 5,

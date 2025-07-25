@@ -1,7 +1,8 @@
+import React, { useState } from 'react';
 import { View, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import HeaderConfig from '@/components/HeaderConfig';
-import React from 'react';
+import ServicesModalCard from '@/components/ServicesModalCard';
 
 const services = [
   {
@@ -30,7 +31,64 @@ const services = [
   },
 ];
 
+// ✅ Define modal content for each service
+const modalDetailsMap = {
+  'Basic Cleaning': {
+    title: 'Basic Cleaning',
+    imageSource: require('@/assets/images/services-modal-basic_cleaning.png'),
+    price: '₱325 – ₱550',
+    days: '10 – 25',
+    description: 'Gentle cleaning for everyday dirt and stains — perfect for keeping your kicks fresh and ready.',
+    additionalDetails: [
+      { label: 'Basic Cleaning', price: '₱325', duration: '10 Days' },
+      { label: 'Unyellowing', price: '+₱125: ₱450', duration: '10 Days' },
+      { label: 'Minor Retouch', price: '+₱125: ₱450', duration: '10 Days' },
+      { label: 'Minor Restoration', price: '+₱225: ₱550', duration: '25 Days' },
+    ],
+  },
+  'Minor Reglue': {
+    title: 'Minor Reglue',
+    imageSource: require('@/assets/images/services-modal-minor_reglue.png'),
+    price: '₱450',
+    days: '25',
+    description: 'Fixes small sole separations with a light reglue, includes basic cleaning to finish it fresh.',
+    additionalDetails: [],
+  },
+  'Full Reglue': {
+    title: 'Full Reglue',
+    imageSource: require('@/assets/images/services-modal-full_reglue.png'),
+    price: '₱575',
+    days: '25',
+    description: 'Complete sole reattachment for worn-out kicks, finished with a basic cleaning for a fresh look.',
+    additionalDetails: [
+      { label: 'Single layer Only'},
+      { label: 'Additional Per layer', price: '+ ₱150', duration: '₱750' },
+    ],
+  },
+  'Color Renewal': {
+    title: 'Color Renewal',
+    imageSource: require('@/assets/images/services-modal-color_renewal.png'),
+    price: '₱600 – ₱700',
+    days: '20',
+    description: 'Restores faded color and vibrance, paired with basic cleaning for a refreshed look',
+    additionalDetails: [
+      { label: '2 Colors', price: '+₱275', duration: '₱600' },
+      { label: '3 Colors', price: '+₱375', duration: '₱700' },
+    ],
+  },
+};
+
 export default function ServicesScreen() {
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+
+  const handleCardPress = (title: string) => {
+    setSelectedService(title);
+  };
+
+  const closeModal = () => setSelectedService(null);
+
+  const selectedModalData = selectedService ? modalDetailsMap[selectedService] : null;
+
   return (
     <>
       <HeaderConfig title="Services" />
@@ -43,7 +101,11 @@ export default function ServicesScreen() {
 
           <View style={styles.grid}>
             {services.map((item, index) => (
-              <TouchableOpacity key={index} style={styles.card} onPress={() => { /* handle tap */ }}>
+              <TouchableOpacity
+                key={index}
+                style={styles.card}
+                onPress={() => handleCardPress(item.title)}
+              >
                 <Image source={item.image} style={styles.cardImage} />
                 <View style={styles.cardOverlay}>
                   <ThemedText type="button" style={styles.cardTitle}>
@@ -75,6 +137,20 @@ export default function ServicesScreen() {
           </View>
         </ScrollView>
       </View>
+
+      {/* ✅ Dynamic Modal */}
+      {selectedModalData && (
+        <ServicesModalCard
+          visible={true}
+          onClose={closeModal}
+          title={selectedModalData.title}
+          imageSource={selectedModalData.imageSource}
+          price={selectedModalData.price}
+          days={selectedModalData.days}
+          description={selectedModalData.description}
+          additionalDetails={selectedModalData.additionalDetails}
+        />
+      )}
     </>
   );
 }

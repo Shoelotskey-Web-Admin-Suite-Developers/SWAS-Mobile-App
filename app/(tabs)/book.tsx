@@ -1,10 +1,8 @@
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Stack } from 'expo-router';
-import React, { useState } from 'react';
 import HeaderConfig from '@/components/HeaderConfig';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import React, { useState } from 'react';
 import {
   Dimensions,
-  Image,
   Platform,
   Pressable,
   StyleSheet,

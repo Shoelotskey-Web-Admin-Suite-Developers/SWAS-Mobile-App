@@ -1,242 +1,243 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import ServiceCard from '@/components/ServiceCard';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import {
   Image,
   ImageBackground,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
+
 export default function HomeScreen() {
-  // const [userName, setUserName] = useState('');
-  // const [recentTrips, setRecentTrips] = useState([]);
-
-  // useEffect(() => {
-  //   const getUser = async () => {
-  //     const name = await fetchUserName();
-  //     if (name) {
-  //       setUserName(name);
-  //       console.log('👤 user_name:', name);
-  //     } else {
-  //       console.warn('⚠️ No user name retrieved.');
-  //     }
-  //   };
-  //   getUser();
-
-  //   const fetchRecentTrips = async () => {
-  //     const userId = await getUserId();
-  //     if (!userId) return;
-
-  //     try {
-  //       const trips = await getTripHistories(userId);
-  //       if (trips && trips.length > 0) {
-  //         // Sort descending by date_start
-  //         trips.sort((a, b) => new Date(b.date_start) - new Date(a.date_start));
-  //         // Take top 3
-  //         setRecentTrips(trips.slice(0, 3));
-  //       }
-  //     } catch (error) {
-  //       console.error('Failed to load recent trips:', error);
-  //     }
-  //   };
-  //   fetchRecentTrips();
-  // }, []);
-
-  // const handleLogout = async () => {
-  //   await clearUserId();
-  //   router.replace('/login');
-  // };
-
   return (
-    <ImageBackground
-      style={styles.background}
-      resizeMode="cover"
-    >
+    <ImageBackground style={styles.screen} resizeMode="cover">
       <ParallaxScrollView
         headerBackgroundColor={{ light: 'transparent', dark: 'transparent' }}
         headerImage={<></>}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={styles.scrollContent}
       >
-        <ThemedView style={styles.topContainer}>
-          <ThemedView style={styles.headerContainer}>
-            <ThemedView style={styles.welcomeContainer}>
-              <ThemedText type="subtitle1">Welcome</ThemedText>
-              <ThemedText type="subtitle2">User</ThemedText>
+        {/* Greeting Section */}
+        <ThemedView style={styles.greetingWrapper}>
+          <ThemedView style={styles.greetingTextWrapper}>
+            <ThemedText type="subtitle1">Hello</ThemedText>
+            <ThemedView style={styles.userNameContainer}>
+              <ThemedText type="default">First Name</ThemedText>
+              <ThemedText type="default">Last Name</ThemedText>
             </ThemedView>
-            <ThemedText type="defaultSemiBold">
-              We are here to wake you up
-            </ThemedText>
           </ThemedView>
-          <TouchableOpacity style={{ marginTop: 5 }}>
+          <TouchableOpacity style={styles.logoutButton}>
             <IconSymbol
               name="rectangle.portrait.and.arrow.right"
               size={28}
-              color="black"
+              color="#D11315"
             />
           </TouchableOpacity>
         </ThemedView>
 
-        {/* 🔁 Replaced current trip scroll with a static image */}
-        <ThemedView style={styles.currentContainer}>
+        {/* Logo/Static Visual Section */}
+        <ThemedView style={styles.heroImageWrapper}>
           <Image
-            style={styles.staticTripImage}
+            source={require('@/assets/images/SWAS-Mobile-Logo-Black.png')}
+            style={styles.logoImage}
+          />
+          <Image
+            source={require('@/assets/images/border.png')}
+            style={styles.borderImage}
           />
         </ThemedView>
 
-        <View style={styles.containerSeparator} />
+        <View style={styles.divider} />
 
-        <ThemedView style={styles.middleContainer}>
+        {/* Quick Actions */}
+        <ThemedView style={styles.quickActionsSection}>
           <ThemedText type="titleSmall">Quick Options</ThemedText>
-          <ThemedView style={styles.optionsContainer}>
-            <TouchableOpacity
-              style={styles.optionButton}
-            >
+          <ThemedView style={styles.quickActionsContainer}>
+            <TouchableOpacity style={styles.actionCard}>
               <Image
-                // source={require('@/assets/images/quick-icon-1.png')}
-                style={styles.optionImage}
+                source={require('@/assets/images/announcement-icon.png')}
+                style={styles.actionIcon}
                 resizeMode="contain"
               />
-              <ThemedText type="option" style={{ textAlign: 'center' }}>
-                Choose Saved Trip
+              <ThemedText type="option" style={styles.actionLabel}>
+                See {'\n'}Announcements
               </ThemedText>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.optionButton}
-            >
+            <TouchableOpacity style={styles.actionCard}>
               <Image
-                // source={require('@/assets/images/quick-icon-2.png')}
-                style={styles.optionImage}
+                source={require('@/assets/images/appointment-icon.png')}
+                style={styles.actionIcon}
                 resizeMode="contain"
               />
-              <ThemedText type="option" style={{ textAlign: 'center' }}>
-                Create A{'\n'}Trip Route
+              <ThemedText type="option" style={styles.actionLabel}>
+                Book{'\n'}Appointment
               </ThemedText>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.optionButton}
-            >
+            <TouchableOpacity style={styles.actionCard}>
               <Image
-                // source={require('@/assets/images/quick-icon-3.png')}
-                style={styles.optionImage}
+                source={require('@/assets/images/track-icon.png')}
+                style={styles.actionIcon}
                 resizeMode="contain"
               />
-              <ThemedText type="option" style={{ textAlign: 'center' }}>
-                View{'\n'}Trip History
+              <ThemedText type="option" style={styles.actionLabel}>
+                Track{'\n'}Service
               </ThemedText>
             </TouchableOpacity>
           </ThemedView>
         </ThemedView>
 
-        <View style={styles.containerSeparator} />
+        <View style={styles.divider} />
+
+        {/* Services Offered */}
+        <ThemedView style={styles.servicesSection}>
+          <View style={styles.servicesHeader}>
+            <ThemedText type="titleSmall">Services Offered</ThemedText>
+            <TouchableOpacity>
+              <ThemedText type="link">View All ➤</ThemedText>
+            </TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.servicesScroll}>
+            {[
+              {
+                image: require('@/assets/images/home-basic_cleaning.png'),
+                name: 'Basic Cleaning',
+                price: '₱325 – ₱550',
+              },
+              {
+                image: require('@/assets/images/home-basic_cleaning.png'),
+                name: 'Minor Reglue (with basic cleaning)',
+                price: '₱450',
+              },
+              {
+                image: require('@/assets/images/home-basic_cleaning.png'),
+                name: 'Full Reglue (with basic cleaning)',
+                price: '₱575',
+              },
+              
+              {
+                image: require('@/assets/images/home-color_renewal.png'),
+                name: 'Color Renewal (with basic cleaning)',
+                price: '₱600 - ₱700',
+              },
+            ].map((service, index) => (
+              <ServiceCard
+                key={index}
+                image={service.image}
+                name={service.name}
+                price={service.price}
+              />
+            ))}
+          </ScrollView>
+        </ThemedView>
+
       </ParallaxScrollView>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
+  screen: {
     flex: 1,
-    padding: 0,
     backgroundColor: 'white',
   },
-  topContainer: {
-    justifyContent: 'space-between',
+  scrollContent: {
+    flexGrow: 1,
+  },
+  greetingWrapper: {
     flexDirection: 'row',
-    gap: 8,
-    paddingLeft: 29,
-    paddingRight: 25,
+    justifyContent: 'space-between',
+    paddingHorizontal: 25,
     paddingTop: 32,
   },
-  headerContainer: {
-    flexDirection: 'column',
-  },
-  welcomeContainer: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#ADCE7D',
+  greetingTextWrapper: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
-  currentContainer: {
-    paddingHorizontal: 32,
-    marginTop: 8,
-  },
-  staticTripImage: {
-    width: 320,
-    height: 170,
-    marginTop: -30,
-    alignSelf: 'center',
-  },
-  middleContainer: {
+  userNameContainer: {
+    marginLeft: 12,
     flexDirection: 'column',
-    paddingLeft: 32,
-    paddingRight: 32,
+    justifyContent: 'center',
+  },
+  logoutButton: {
+    marginTop: 5,
+  },
+  heroImageWrapper: {
+    marginTop: 8,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  logoImage: {
+    width: 260,
+    height: 170,
+    resizeMode: 'contain',
+    marginBottom: 10,
+    marginTop: -30,
+  },
+  borderImage: {
+    width: '100%',
+    height: 20,
+    resizeMode: 'stretch',
+    position: 'absolute',
+    bottom: 0,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#ccc',
+    opacity: 0.5,
+    marginVertical: 12,
+    marginHorizontal: 16,
+  },
+  quickActionsSection: {
+    paddingHorizontal: 16,
     marginTop: -5,
   },
-  optionsContainer: {
+  quickActionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 27,
-    marginLeft: 9,
-    marginRight: 9,
+    marginTop: 24,
+    marginHorizontal: 9,
     gap: 5,
   },
-  optionButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
+  actionCard: {
+    width: 95,
     padding: 8,
     borderRadius: 12,
-    width: 80,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
     elevation: 8,
   },
-  optionImage: {
+  actionIcon: {
     width: 58,
     height: 58,
     marginBottom: -25,
     top: -29,
     zIndex: 1,
   },
-  bottomContainer: {
-    flex: 1,
-    gap: 8,
-    marginBottom: 16,
-    backgroundColor: '#ADCE7D',
-    padding: 20,
-    borderRadius: 20,
-    marginLeft: 18,
-    marginRight: 18,
+  actionLabel: {
+    textAlign: 'center',
   },
-  tripContainer: {
-    padding: 10,
-    borderRadius: 20,
-    backgroundColor: 'white',
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-  },
-  tripText: {
-    fontSize: 12.5,
-    maxWidth: 160,
-    marginBottom: 5,
-    overflow: 'hidden',
-  },
-  trip: {
-    width: 160,
-    flexDirection: 'column',
-    flexWrap: 'wrap',
-  },
-  containerSeparator: {
-    height: 1,
-    backgroundColor: '#ccc',
-    marginVertical: 0,
-    opacity: 0.5,
-    marginLeft: 32,
-    marginRight: 32,
-  },
+
+  servicesSection: {
+  paddingHorizontal: 0,
+  marginTop: -12,
+},
+servicesHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 10,
+  paddingHorizontal: 16,
+},
+servicesScroll: {
+  paddingLeft: 16,
+  paddingRight: 20,
+},
+
 });

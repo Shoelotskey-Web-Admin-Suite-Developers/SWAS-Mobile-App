@@ -30,8 +30,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/SWAS-Mobile-Logo-Black.png",
-          "imageWidth": 220,
-          "imageHeight": 280,
+          "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }

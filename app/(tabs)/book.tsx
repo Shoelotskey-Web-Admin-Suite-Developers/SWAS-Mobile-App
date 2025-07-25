@@ -108,7 +108,7 @@ export default function BookingScreen() {
               <DateTimePicker
                 value={date || new Date()}
                 mode="date"
-                display={Platform.OS === 'android' ? 'spinner' : 'calendar'}
+                display={Platform.OS === 'android' ? 'calendar' : 'spinner'}
                 onChange={(event, selectedDate) => {
                   setShowDatePicker(false);
                   if (selectedDate) setDate(selectedDate);

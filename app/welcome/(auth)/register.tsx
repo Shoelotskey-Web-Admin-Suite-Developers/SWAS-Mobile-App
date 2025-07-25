@@ -3,6 +3,7 @@ import { ThemedView } from '@/components/ThemedView';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
+import ErrorModal from '@/components/ErrorSignUpModal';
 import {
   Dimensions,
   ImageBackground,
@@ -24,12 +25,24 @@ export default function LoginScreen() {
   const [address, setAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
+  const [showError, setShowError] = useState(false); // ⛔ Error modal control
 
   const formatDate = (date: Date | undefined) => {
     if (!date) return '';
     return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1)
       .toString()
       .padStart(2, '0')}-${date.getFullYear()}`;
+  };
+
+  const handleSubmit = () => {
+    // Mock validation
+    const isExisting = true; // Simulate conflict
+    if (isExisting) {
+      setShowError(true);
+      return;
+    }
+
+    router.replace('/(tabs)/home');
   };
 
   return (
@@ -41,17 +54,12 @@ export default function LoginScreen() {
         resizeMode="cover"
       >
         <View style={styles.container}>
-          {/* <Image
-            source={require('@/assets/images/SWAS-Mobile-Logo-Black.png')}
-            style={styles.titleImage}
-            resizeMode="contain"
-          /> */}
-          <ThemedText type="title" style={{ marginTop: 55, marginBottom: 20, textAlign:'center' }}>
+          <ThemedText type="title" style={{ marginTop: 55, marginBottom: 20, textAlign: 'center' }}>
             Sign Up
           </ThemedText>
 
           <ThemedText type="titleSmall" style={styles.label}>Name*</ThemedText>
-          <ThemedView style={{flexDirection: 'row', justifyContent:'space-between'}}>
+          <ThemedView style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <TextInput
               style={styles.inputDouble}
               placeholder="First Name"
@@ -131,12 +139,12 @@ export default function LoginScreen() {
           </ThemedView>
 
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.button} onPress={() => router.replace('/(tabs)/home')}>
+            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
               <ThemedText type="button" style={{ color: 'white' }}>Enter</ThemedText>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.link} onPress={() => router.replace('/welcome/(auth)/login')}>
-              <ThemedText type='default' style={{ textAlign:'center', color: '#CE1616' }}>
+              <ThemedText type="default" style={{ textAlign: 'center', color: '#CE1616' }}>
                 Already have an account?{'\n'}
                 <ThemedText style={{ color: '#CE1616', textDecorationLine: 'underline' }}>
                   Click here to login
@@ -144,13 +152,19 @@ export default function LoginScreen() {
               </ThemedText>
             </TouchableOpacity>
           </View>
-
         </View>
       </ImageBackground>
+
+      <ErrorModal
+        visible={showError}
+        onClose={() => setShowError(false)}
+        title="Error Signing Up"
+        message="The name entered is already used by an existing account. Try logging in with the said username along with your corresponding birthdate."
+        buttonLabel="Back"
+      />
     </>
   );
 }
-
 
 const styles = StyleSheet.create({
   background: {

@@ -100,7 +100,10 @@ const CustomBottomBar = ({ state, descriptors, navigation }: BottomTabBarProps) 
               activeOpacity={0.8}
             >
               <Animated.View style={animatedIconStyle}>
-                {Icon && Icon({ color: isFocused ? '#D50000' : '#ccc', focused: isFocused })}
+                {Icon && Icon({
+                  color: isFocused ? '#D50000' : '#fff', focused: isFocused,
+                  size: 0
+                })}
               </Animated.View>
               <Text style={[styles.label, isFocused && styles.labelFocused]}>
                 {label}
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    color: '#ccc',
+    color: '#fff',
     marginTop: 4,
   },
   labelFocused: {

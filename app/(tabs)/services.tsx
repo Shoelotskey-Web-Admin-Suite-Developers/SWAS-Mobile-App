@@ -1,5 +1,6 @@
 import { View, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
+import HeaderConfig from '@/components/HeaderConfig';
 import React from 'react';
 
 const services = [
@@ -31,51 +32,50 @@ const services = [
 
 export default function ServicesScreen() {
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedText type="titleSmall" style={styles.title}>
-          Services
-        </ThemedText>
+    <>
+      <HeaderConfig title="Services" />
 
-        <View style={styles.headerBar} />
-        <ThemedText type="subtitle1" style={styles.sectionTitle}>
-          Details and Price
-        </ThemedText>
-
-        <View style={styles.grid}>
-          {services.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.card} onPress={() => { /* handle tap */ }}>
-              <Image source={item.image} style={styles.cardImage} />
-              <View style={styles.cardOverlay}>
-                <ThemedText type="button" style={styles.cardTitle}>
-                  {item.title}
-                </ThemedText>
-                {item.subtitle !== '' && (
-                  <ThemedText type="option" style={styles.cardSubtitle}>
-                    {item.subtitle}
-                  </ThemedText>
-                )}
-                <ThemedText type="button" style={styles.cardPrice}>
-                  {item.price}
-                </ThemedText>
-                <ThemedText
-                  type="link"
-                  style={{ color: '#fff', fontSize: 14, alignSelf: 'center' }}
-                >
-                  View Details
-                </ThemedText>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.note}>
-          <ThemedText type="option" style={styles.noteText}>
-            Note:{"\n"}This section is for service details only. Actual service will be assessed and scheduled on-site.
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ThemedText type="subtitle1" style={styles.sectionTitle}>
+            Details and Price
           </ThemedText>
-        </View>
-      </ScrollView>
-    </View>
+
+          <View style={styles.grid}>
+            {services.map((item, index) => (
+              <TouchableOpacity key={index} style={styles.card} onPress={() => { /* handle tap */ }}>
+                <Image source={item.image} style={styles.cardImage} />
+                <View style={styles.cardOverlay}>
+                  <ThemedText type="button" style={styles.cardTitle}>
+                    {item.title}
+                  </ThemedText>
+                  {item.subtitle !== '' && (
+                    <ThemedText type="option" style={styles.cardSubtitle}>
+                      {item.subtitle}
+                    </ThemedText>
+                  )}
+                  <ThemedText type="button" style={styles.cardPrice}>
+                    {item.price}
+                  </ThemedText>
+                  <ThemedText
+                    type="link"
+                    style={{ color: '#fff', fontSize: 14, alignSelf: 'center' }}
+                  >
+                    View Details
+                  </ThemedText>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.note}>
+            <ThemedText type="option" style={styles.noteText}>
+              Note:{"\n"}This section is for service details only. Actual service will be assessed and scheduled on-site.
+            </ThemedText>
+          </View>
+        </ScrollView>
+      </View>
+    </>
   );
 }
 
@@ -87,17 +87,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 100,
-  },
-  title: {
-    marginBottom: 8,
-    color: '#D11315',
-  },
-  headerBar: {
-    height: 10,
-    backgroundColor: '#D11315',
-    marginVertical: 5,
-    borderRadius: 4,
-    width: '100%',
   },
   sectionTitle: {
     marginTop: 10,

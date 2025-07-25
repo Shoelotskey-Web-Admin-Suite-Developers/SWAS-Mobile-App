@@ -1,6 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Stack } from 'expo-router';
 import React, { useState } from 'react';
+import HeaderConfig from '@/components/HeaderConfig';
 import {
   Dimensions,
   Image,
@@ -44,36 +45,7 @@ export default function BookingScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: 'Booking',
-          headerTitleAlign: 'left',
-          headerStyle: {
-            backgroundColor: '#FFFFFF',
-          },
-          headerTitleStyle: {
-            fontFamily: 'InterExtraBold',
-            fontSize: 32,
-            color: "#D11315",
-            marginTop: -30,
-          },
-          headerBackground: () => (
-            <View style={{ flex: 1, backgroundColor: '#fff' }}>
-              <Image
-                source={require('@/assets/images/border.png')}
-                style={{
-                  width: '100%',
-                  height: 20,
-                  resizeMode: 'stretch',
-                  position: 'absolute',
-                  bottom: 0,
-                }}
-              />
-            </View>
-          ),
-        }}
-      />
+      <HeaderConfig title="Booking" />
 
       <View style={styles.container}>
         <View style={styles.card}>

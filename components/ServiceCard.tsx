@@ -1,4 +1,6 @@
-import { ImageBackground, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, ImageBackground, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+
+const windowHeight = Dimensions.get('window').height;
 
 type Props = {
   image: ImageSourcePropType;
@@ -7,8 +9,14 @@ type Props = {
 };
 
 export default function ServiceCard({ image, name, price }: Props) {
+  const cardHeight = windowHeight * 0.25 - 100; // or any formula you prefer
+
   return (
-    <ImageBackground source={image} style={styles.card} imageStyle={styles.image}>
+    <ImageBackground
+      source={image}
+      style={[styles.card, { height: cardHeight }]}
+      imageStyle={styles.image}
+    >
       <View style={styles.overlay}>
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.price}>{price}</Text>
@@ -20,7 +28,6 @@ export default function ServiceCard({ image, name, price }: Props) {
 const styles = StyleSheet.create({
   card: {
     width: 160,
-    height: 80,
     justifyContent: 'flex-end',
     borderRadius: 12,
     overflow: 'hidden',

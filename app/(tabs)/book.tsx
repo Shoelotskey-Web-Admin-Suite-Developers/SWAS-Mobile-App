@@ -1,117 +1,128 @@
+import AppointmentCard from '@/components/AppointmentCard';
+import DateInput from '@/components/DateInput';
 import HeaderConfig from '@/components/HeaderConfig';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useState } from 'react';
+import TimeInput from '@/components/TimeInput';
 import {
-  Dimensions,
-  Platform,
-  Pressable,
+  roundTo30Min
+} from '@/utils/date';
+import React, { useEffect, useState } from 'react';
+import {
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
 
-const { width } = Dimensions.get('window');
+const branchOptions = [
+  { label: 'SM Grand', value: 'SM Grand' },
+  { label: 'SM Valenzuela', value: 'SM Valenzuela' },
+  { label: 'Valenzuela', value: 'Valenzuela' },
+];
+
+const defaultAppointment = {
+  branch: '',
+  date: undefined,
+  time: undefined,
+  status: 'none',
+};
 
 export default function BookingScreen() {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState(branchOptions);
   const [branch, setBranch] = useState('');
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState<Date | undefined>();
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [currentAppointment, setCurrentAppointment] = useState<{
+    branch: string;
+    date: Date;
+    time: Date;
+    status: 'none' | 'pending' | 'confirmed';
+  } | null>(null);
 
-  const formatDate = (d?: Date) => d ? `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}` : 'DD-MM-YY';
-  const formatTimeRange = (d?: Date) => {
-    if (!d) return 'Select Time';
+  useEffect(() => {
+    const dummy = {
+      branch: 'SM Grand',
+      date: new Date(2025, 6, 8),
+      time: roundTo30Min(new Date(2025, 6, 8, 10, 0)),
+      status: 'pending',
+    };
+    setCurrentAppointment(dummy);
+  }, []);
 
-    const start = new Date(d);
-    const end = new Date(d.getTime() + 30 * 60 * 1000); // +30 mins
+  useEffect(() => {
+    if (!currentAppointment?.date || !currentAppointment?.time) return;
 
-    const format = (t: Date) =>
-      t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const { date, time } = currentAppointment;
 
-    return `${format(start)} - ${format(end)}`;
+    const appointmentDateTime = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      time.getHours(),
+      time.getMinutes()
+    );
+
+    if (appointmentDateTime < new Date()) {
+      setCurrentAppointment(defaultAppointment);
+    }
+  }, [currentAppointment]);
+
+  const handleBookAppointment = () => {
+    if (!branch || !date || !time) {
+      alert('Please complete all required fields.');
+      return;
+    }
+
+    const newAppointment = {
+      branch,
+      date,
+      time,
+      notes: notes.trim() || '',
+      status: 'pending',
+    };
+
+    setCurrentAppointment(newAppointment);
+
+    console.log('📦 Send this to backend:', {
+      userId: 'TODO_USER_ID',
+      ...newAppointment,
+    });
+
+    setBranch('');
+    setDate(undefined);
+    setTime(undefined);
+    setNotes('');
   };
 
-  // Round time to nearest 30 minutes
-  const roundTo30Min = (date: Date): Date => {
-    const ms = 1000 * 60 * 30;
-    return new Date(Math.round(date.getTime() / ms) * ms);
-  };
+  const appointment = currentAppointment || defaultAppointment;
 
   return (
     <>
       <HeaderConfig title="Booking" />
 
       <View style={styles.container}>
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Current Appointment</Text>
-            <Text style={styles.cardNone}>None</Text>
-          </View>
-          <Text>🏢 No branch selected</Text>
-          <Text>📅 Date not set</Text>
-          <Text>⏱ Time not recorded</Text>
-        </View>
+        <AppointmentCard appointment={appointment} />
 
         <Text style={styles.label}>Select Branch*</Text>
-        <TextInput
-          placeholder="Branch Name"
-          value={branch}
-          onChangeText={setBranch}
-          style={styles.input}
-        />
+        <View style={styles.selectWrapper}>
+          <DropDownPicker
+            open={open}
+            value={branch}
+            items={items}
+            setOpen={setOpen}
+            setValue={setBranch}
+            setItems={setItems}
+            placeholder="Select a branch..."
+            style={styles.dropdown}
+          />
+        </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={{ width: '48%' }}>
-            <Text style={styles.label}>Select Date*</Text>
-            <Pressable onPress={() => setShowDatePicker(true)}>
-              <TextInput
-                style={styles.input}
-                value={formatDate(date)}
-                editable={false}
-              />
-            </Pressable>
-            {showDatePicker && (
-              <DateTimePicker
-                value={date || new Date()}
-                mode="date"
-                display={Platform.OS === 'android' ? 'calendar' : 'spinner'}
-                onChange={(event, selectedDate) => {
-                  setShowDatePicker(false);
-                  if (selectedDate) setDate(selectedDate);
-                }}
-              />
-            )}
-          </View>
-
-          <View style={{ width: '48%' }}>
-            <Text style={styles.label}>Select Time*</Text>
-            <Pressable onPress={() => setShowTimePicker(true)}>
-              <TextInput
-                style={styles.input}
-                value={formatTimeRange(time)}
-                editable={false}
-              />
-            </Pressable>
-            {showTimePicker && (
-              <DateTimePicker
-                value={time || roundTo30Min(new Date())}
-                mode="time"
-                is24Hour={false}
-                display={Platform.OS === 'android' ? 'spinner' : 'default'}
-                onChange={(event, selectedTime) => {
-                  setShowTimePicker(false);
-                  if (selectedTime) {
-                    const rounded = roundTo30Min(selectedTime);
-                    setTime(rounded);
-                  }
-                }}
-              />
-            )}
-          </View>
+          <DateInput value={date} onChange={setDate} />
+          <TimeInput value={time} onChange={setTime} />
         </View>
 
         <Text style={styles.label}>Notes (Optional)</Text>
@@ -123,8 +134,10 @@ export default function BookingScreen() {
           style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
         />
 
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Book Appointment</Text>
+        <TouchableOpacity style={styles.button} onPress={handleBookAppointment}>
+          <Text style={styles.buttonText}>
+            {appointment.branch && appointment.status !== 'none' ? 'Edit Appointment' : 'Book Appointment'}
+          </Text>
         </TouchableOpacity>
       </View>
     </>
@@ -136,47 +149,6 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#F2F2F2',
     flex: 1,
-  },
-  header: {
-    color: '#CE1616',
-    backgroundColor: '#ffffff',
-    marginHorizontal: -20,
-    marginTop: -20,
-    marginBottom: 20,
-    paddingTop:30,
-    paddingHorizontal: 20,
-  },
-  checkeredLine: {
-    height: 20,
-    width: '100%',
-    resizeMode: 'stretch',
-    
-    marginTop:10,
-
-    alignSelf: 'center',  
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  cardTitle: {
-    fontWeight: 'bold',
-    color: '#CE1616',
-    fontSize: 16,
-  },
-  cardNone: {
-    backgroundColor: '#EAEAEA',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
   },
   label: {
     fontWeight: '600',
@@ -202,5 +174,18 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  selectWrapper: {
+    borderColor: '#E6E6E6',
+    borderRadius: 6,
+    marginBottom: 10,
+    backgroundColor: 'white',
+    padding: 0,
+  },
+  dropdown: {
+    borderColor: '#E6E6E6',
+    borderWidth: 1,
+    borderRadius: 6,
+    backgroundColor: 'white',
   },
 });

@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   default: {
     fontFamily: 'Inter',
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   header: {
     fontFamily: 'InterExtraBold',
@@ -63,16 +63,18 @@ const styles = StyleSheet.create({
   },
   titleSmall: {
     fontFamily: 'InterExtraBold',
-    fontSize: 20,
+    fontSize: 18,
     lineHeight: 25,
   },
   subtitle1: {
     fontFamily: 'InterBold',
-    fontSize: 25,
+    fontSize: 15,
+    lineHeight: 18,
   },
   subtitle2: {
     fontFamily: 'InterBold',
-    fontSize: 25,
+    fontSize: 12,
+    lineHeight: 15,
   },
   link: {
     fontFamily: 'Inter',

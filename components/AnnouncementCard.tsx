@@ -23,8 +23,8 @@ export default function AnnouncementCard({ date, title, description }: Props) {
 
         <View style={styles.content}>
           <View>
-            <ThemedText type="subtitle1">{title}</ThemedText>
-            <ThemedText type="default">{description}</ThemedText>
+            <ThemedText type="subtitle1" style={styles.contentText}>{title}</ThemedText>
+            <ThemedText type="default" style={styles.contentText}>{description}</ThemedText>
           </View>
         </View>
       </ScrollView>
@@ -67,4 +67,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     paddingBottom: 10,
   },
+  contentText: {
+    color: '#00000ff',
+  }
 });

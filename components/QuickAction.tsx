@@ -66,5 +66,8 @@ const styles = StyleSheet.create({
   },
   label: {
     textAlign: 'center',
+    color: '#00000ff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
 });

@@ -6,10 +6,29 @@ import QuickActionsRow from '@/components/QuickActionsRow';
 import ServicesCarousel from '@/components/ServicesCarousel';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { router} from 'expo-router';
+import AnnouncementsModal from '@/components/AnnouncementsModal';
+import { useAnnouncements } from '@/hooks/useAnnouncements';
+
+import { router } from 'expo-router';
 import { ImageBackground, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 export default function HomeScreen() {
+  const [showModal, setShowModal] = useState(false);
+  const { announcements, loading } = useAnnouncements();
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Rotate the announcement every 30 seconds
+  useEffect(() => {
+    if (!announcements || announcements.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % announcements.length);
+    }, 7000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [announcements]);
+
   return (
     <ImageBackground style={styles.screen} resizeMode="cover">
       <ParallaxScrollView
@@ -18,23 +37,31 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <GreetingHeader />
-
         <HeroLogo />
-        <AnnouncementCard
-          date="June 10, 2025"
-          title="⏰ Early Closing Notice"
-          description="The Main Branch will be closed for maintenance. Regular operations resume June 11."
-        />
+
+        {!loading && announcements.length > 0 && (
+          <AnnouncementCard
+            date={announcements[currentIndex].date}
+            title={announcements[currentIndex].title}
+            description={announcements[currentIndex].description}
+          />
+        )}
+
+        {!loading && announcements.length === 0 && (
+          <ThemedText type="subtitle2" style={styles.emptyText}>
+            No announcements yet.
+          </ThemedText>
+        )}
 
         <View style={styles.divider} />
 
-        <QuickActionsRow />
+        <QuickActionsRow onAnnouncementsPress={() => setShowModal(true)} />
 
         <View style={styles.divider} />
 
         <ThemedView style={styles.servicesSection}>
           <View style={styles.servicesHeader}>
-            <ThemedText type="titleSmall">Services Offered</ThemedText>
+            <ThemedText type="titleSmall" style={styles.servicesSection}>Services Offered</ThemedText>
             <TouchableOpacity onPress={() => router.push('/services')}>
               <ThemedText type="link">View All ></ThemedText>
             </TouchableOpacity>
@@ -42,6 +69,8 @@ export default function HomeScreen() {
           <ServicesCarousel />
         </ThemedView>
       </ParallaxScrollView>
+
+      <AnnouncementsModal visible={showModal} onClose={() => setShowModal(false)} />
     </ImageBackground>
   );
 }
@@ -64,6 +93,7 @@ const styles = StyleSheet.create({
   servicesSection: {
     paddingHorizontal: 0,
     marginTop: -12,
+    color: '#00000ff',
   },
   servicesHeader: {
     flexDirection: 'row',
@@ -71,5 +101,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
     paddingHorizontal: 16,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 16,
+    color: '#888',
   },
 });

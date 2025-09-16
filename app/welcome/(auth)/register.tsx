@@ -1,9 +1,9 @@
+import ErrorModal from '@/components/ErrorSignUpModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
-import ErrorModal from '@/components/ErrorSignUpModal';
 import {
   Dimensions,
   ImageBackground,
@@ -16,8 +16,9 @@ import {
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [birthday, setBirthday] = useState<Date | undefined>();
@@ -25,7 +26,8 @@ export default function LoginScreen() {
   const [address, setAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
-  const [showError, setShowError] = useState(false); // ⛔ Error modal control
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const formatDate = (date: Date | undefined) => {
     if (!date) return '';
@@ -34,22 +36,47 @@ export default function LoginScreen() {
       .padStart(2, '0')}-${date.getFullYear()}`;
   };
 
-  const handleSubmit = () => {
-    // Mock validation
-    const isExisting = true; // Simulate conflict
-    if (isExisting) {
+  const handleSubmit = async () => {
+    if (!firstName || !lastName || !birthday) {
+      setErrorMessage('Please fill in all required fields.');
       setShowError(true);
       return;
     }
 
-    router.replace('/(tabs)/home');
+    try {
+      const res = await fetch(`${API_BASE_URL}/customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cust_name: `${firstName.trim()} ${lastName.trim()}`,
+          cust_bdate: birthday.toISOString(),
+          cust_address: address || undefined,
+          cust_contact: phoneNumber || undefined,
+          cust_email: email || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Success → redirect to login
+        router.replace('/welcome/(auth)/login');
+      } else {
+        // Show backend error
+        setErrorMessage(data.error || 'Registration failed.');
+        setShowError(true);
+      }
+    } catch (err) {
+      console.error('Network error:', err);
+      setErrorMessage('Network or server error. Please try again.');
+      setShowError(true);
+    }
   };
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ImageBackground
-        // source={require('@/assets/images/loginBG.jpg')}
         style={styles.background}
         resizeMode="cover"
       >
@@ -94,49 +121,41 @@ export default function LoginScreen() {
               display={Platform.OS === 'android' ? 'spinner' : 'calendar'}
               onChange={(event, selectedDate) => {
                 setShowPicker(false);
-                if (selectedDate) {
-                  setBirthday(selectedDate);
-                }
+                if (selectedDate) setBirthday(selectedDate);
               }}
               maximumDate={new Date()}
             />
           )}
 
           <ThemedText type="titleSmall" style={styles.label}>Address</ThemedText>
-          <ThemedView>
-            <TextInput
-              style={styles.input}
-              placeholder="Brgy/Village - City - Province"
-              autoCapitalize="words"
-              value={address}
-              onChangeText={setAddress}
-            />
-          </ThemedView>
+          <TextInput
+            style={styles.input}
+            placeholder="Brgy/Village - City - Province"
+            autoCapitalize="words"
+            value={address}
+            onChangeText={setAddress}
+          />
 
           <ThemedText type="titleSmall" style={styles.label}>Phone Number</ThemedText>
-          <ThemedView>
-            <TextInput
-              style={styles.input}
-              placeholder="0000-000-0000"
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-            />
-          </ThemedView>
+          <TextInput
+            style={styles.input}
+            placeholder="0000-000-0000"
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+          />
 
           <ThemedText type="titleSmall" style={styles.label}>Email</ThemedText>
-          <ThemedView>
-            <TextInput
-              style={styles.input}
-              placeholder="sample@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </ThemedView>
+          <TextInput
+            style={styles.input}
+            placeholder="sample@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            value={email}
+            onChangeText={setEmail}
+          />
 
           <View style={styles.footer}>
             <TouchableOpacity style={styles.button} onPress={handleSubmit}>
@@ -159,7 +178,7 @@ export default function LoginScreen() {
         visible={showError}
         onClose={() => setShowError(false)}
         title="Error Signing Up"
-        message="The name entered is already used by an existing account. Try logging in with the said username along with your corresponding birthdate."
+        message={errorMessage}
         buttonLabel="Back"
       />
     </>
@@ -167,65 +186,12 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'white',
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 50,
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: 40,
-  },
-  input: {
-    width: '100%',
-    borderColor: '#212934',
-    borderBottomWidth: 1,
-    padding: 10,
-    marginBottom: 15,
-    borderRadius: 6,
-    fontFamily: 'Inter',
-    backgroundColor: 'transparent',
-  },
-  inputDouble: {
-    width: '48%',
-    borderColor: '#212934',
-    borderBottomWidth: 1,
-    padding: 10,
-    marginBottom: 15,
-    borderRadius: 6,
-    fontFamily: 'Inter',
-    backgroundColor: 'transparent',
-  },
-  footer: {
-    marginTop: 'auto',
-    alignItems: 'center',
-    marginBottom: height * 0.05,
-    gap: 16,
-  },
-  button: {
-    backgroundColor: '#CE1616',
-    paddingVertical: 12,
-    borderRadius: 50,
-    alignItems: 'center',
-    width: '100%',
-    elevation: 5,
-  },
-  link: {
-    flexDirection: 'row',
-    alignSelf: 'center',
-  },
-  label: {
-    fontSize: 18,
-  },
-  titleImage: {
-    width: 250,
-    height: 200,
-    marginBottom: 50,
-    top: 70,
-    position: 'absolute',
-    alignSelf: 'center',
-  },
+  background: { flex: 1, justifyContent: 'center', backgroundColor: 'white' },
+  container: { padding: 24, paddingBottom: 50, justifyContent: 'center', flex: 1, paddingHorizontal: 40 },
+  input: { width: '100%', borderColor: '#212934', borderBottomWidth: 1, padding: 10, marginBottom: 15, borderRadius: 6, fontFamily: 'Inter', backgroundColor: 'transparent' },
+  inputDouble: { width: '48%', borderColor: '#212934', borderBottomWidth: 1, padding: 10, marginBottom: 15, borderRadius: 6, fontFamily: 'Inter', backgroundColor: 'transparent' },
+  footer: { marginTop: 'auto', alignItems: 'center', marginBottom: height * 0.05, gap: 16 },
+  button: { backgroundColor: '#CE1616', paddingVertical: 12, borderRadius: 50, alignItems: 'center', width: '100%', elevation: 5 },
+  link: { flexDirection: 'row', alignSelf: 'center' },
+  label: { fontSize: 18 },
 });

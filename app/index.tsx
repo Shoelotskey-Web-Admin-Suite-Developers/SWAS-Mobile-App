@@ -1,49 +1,32 @@
-// import { useEffect, useState } from 'react';
-// import { Redirect, Stack } from 'expo-router';
-// import { getUserId } from '@utils/session';
-
-// export default function Index() {
-//   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-
-//   useEffect(() => {
-//     const checkSession = async () => {
-//       const userId = await getUserId();
-//       setIsLoggedIn(!!userId);
-//     };
-
-//     checkSession();
-//   }, []);
-
-//   if (isLoggedIn === null) return null; // ⏳ wait for session check
-
-//   return (
-//     <>
-//       <Stack.Screen options={{ headerShown: false }} />
-//       <Redirect href={isLoggedIn ? '/(home)/dashboard' : '/login'} />
-//     </>
-//   );
-// }
-
-// index.tsx
-import { useEffect, useState } from 'react';
-import { Redirect, Stack } from 'expo-router';
+import { getUserId } from "@/utils/session";
+import { Redirect, Stack } from "expo-router";
+import { useEffect, useState } from "react";
 
 export default function Index() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // auth not yet set, hardcoded to false
-    setIsLoggedIn(false);
+    const checkSession = async () => {
+      try {
+        const userId = await getUserId();
+        setIsLoggedIn(Boolean(userId));
+      } catch (error) {
+        console.error("❌ Error checking session:", error);
+        setIsLoggedIn(false);
+      }
+    };
+
+    checkSession();
   }, []);
 
-  if (isLoggedIn === null) return null; // wait for useEffect
+  if (isLoggedIn === null) return null; // ⏳ waiting for session check
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <Redirect href="./welcome/welcome" />
+      <Redirect
+        href={isLoggedIn ? "/(tabs)/home" : "/welcome/welcome"}
+      />
     </>
   );
 }
-
-

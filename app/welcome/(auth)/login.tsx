@@ -1,5 +1,7 @@
+import ErrorModal from '@/components/ErrorSignUpModal'; // ✅ import modal
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { saveUserId } from "@/utils/session";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
@@ -15,15 +17,18 @@ import {
   View
 } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 export default function LoginScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-
-  // Birthday date picker state
   const [birthday, setBirthday] = useState<Date | undefined>();
   const [showPicker, setShowPicker] = useState(false);
+
+  // 🔴 Error modal state
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const formatDate = (date: Date | undefined) => {
     if (!date) return '';
@@ -32,26 +37,62 @@ export default function LoginScreen() {
       .padStart(2, '0')}-${date.getFullYear()}`;
   };
 
+  const handleLogin = async () => {
+    if (!firstName || !lastName || !birthday) {
+      setErrorMessage("⚠️ Please fill in all required fields");
+      setShowError(true);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/customers/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          cust_bdate: birthday.toISOString(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        if (data.userId) {
+          await saveUserId(data.userId);
+          console.log("Login response:", data);
+        }
+        router.replace("/(tabs)/home");
+      } else {
+        setErrorMessage(data.error || "❌ Login failed");
+        setShowError(true);
+      }
+    } catch (err) {
+      console.error("❌ Network error:", err);
+      setErrorMessage("⚠️ Network or server error");
+      setShowError(true);
+    }
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ImageBackground
-        // source={require('@/assets/images/loginBG.jpg')}
-        style={styles.background}
-        resizeMode="cover"
-      >
+      <ImageBackground style={styles.background} resizeMode="cover">
         <View style={styles.container}>
           <Image
             source={require('@/assets/images/SWAS-Mobile-Logo-Black.png')}
             style={styles.titleImage}
             resizeMode="contain"
           />
-          <ThemedText type="title" style={{ marginTop: 300, marginBottom: 20, textAlign:'center' }}>
+          <ThemedText
+            type="title"
+            style={{ marginTop: 300, marginBottom: 20, textAlign: 'center' }}
+          >
             Sign in
           </ThemedText>
 
           <ThemedText type="titleSmall" style={styles.label}>Name*</ThemedText>
-          <ThemedView style={{flexDirection: 'row', justifyContent:'space-between'}}>
+          <ThemedView style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <TextInput
               style={styles.inputDouble}
               placeholder="First Name"
@@ -86,21 +127,22 @@ export default function LoginScreen() {
               display={Platform.OS === 'android' ? 'spinner' : 'calendar'}
               onChange={(event, selectedDate) => {
                 setShowPicker(false);
-                if (selectedDate) {
-                  setBirthday(selectedDate);
-                }
+                if (selectedDate) setBirthday(selectedDate);
               }}
               maximumDate={new Date()}
             />
           )}
 
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.button} onPress={() => router.replace('/(tabs)/home')}>
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
               <ThemedText type="button" style={{ color: 'white' }}>Enter</ThemedText>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.link} onPress={() => router.replace('/welcome/(auth)/register')}>
-              <ThemedText type='default' style={{ textAlign:'center', color: '#CE1616' }}>
+            <TouchableOpacity
+              style={styles.link}
+              onPress={() => router.replace('/welcome/(auth)/register')}
+            >
+              <ThemedText type="default" style={{ textAlign: 'center', color: '#CE1616' }}>
                 Don't have an account?{'\n'}
                 <ThemedText style={{ color: '#CE1616', textDecorationLine: 'underline' }}>
                   Click here to sign up
@@ -108,74 +150,29 @@ export default function LoginScreen() {
               </ThemedText>
             </TouchableOpacity>
           </View>
-
         </View>
       </ImageBackground>
+
+      {/* ✅ Error modal at bottom */}
+      <ErrorModal
+        visible={showError}
+        onClose={() => setShowError(false)}
+        title="Login Error"
+        message={errorMessage}
+        buttonLabel="Back"
+      />
     </>
   );
 }
 
-
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'white',
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 50,
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: 40,
-  },
-  input: {
-    width: '100%',
-    borderColor: '#212934',
-    borderBottomWidth: 1,
-    padding: 10,
-    marginBottom: 15,
-    borderRadius: 6,
-    fontFamily: 'Inter',
-    backgroundColor: 'transparent',
-  },
-  
-  inputDouble: {
-    width: '48%',
-    borderColor: '#212934',
-    borderBottomWidth: 1,
-    padding: 10,
-    marginBottom: 15,
-    borderRadius: 6,
-    fontFamily: 'Inter',
-    backgroundColor: 'transparent',
-  },
-  footer: {
-    marginTop: 'auto',
-    alignItems: 'center',
-    marginBottom: height * 0.05,
-    gap: 16,
-  },
-  button: {
-    backgroundColor: '#CE1616',
-    paddingVertical: 12,
-    borderRadius: 50,
-    alignItems: 'center',
-    width: '100%',
-    elevation: 5,
-  },
-  link: {
-    flexDirection: 'row',
-    alignSelf: 'center',
-  },
-  titleImage: {
-    width: 250,
-    height: 200,
-    top: 70,
-    position: 'absolute',
-    alignSelf: 'center',
-  },
-  label: {
-    fontSize: 18,
-  },
+  background: { flex: 1, justifyContent: 'center', backgroundColor: 'white' },
+  container: { padding: 24, paddingBottom: 50, justifyContent: 'center', flex: 1, paddingHorizontal: 40 },
+  input: { width: '100%', borderColor: '#212934', borderBottomWidth: 1, padding: 10, marginBottom: 15, borderRadius: 6, fontFamily: 'Inter', backgroundColor: 'transparent' },
+  inputDouble: { width: '48%', borderColor: '#212934', borderBottomWidth: 1, padding: 10, marginBottom: 15, borderRadius: 6, fontFamily: 'Inter', backgroundColor: 'transparent' },
+  footer: { marginTop: 'auto', alignItems: 'center', marginBottom: height * 0.05, gap: 16 },
+  button: { backgroundColor: '#CE1616', paddingVertical: 12, borderRadius: 50, alignItems: 'center', width: '100%', elevation: 5 },
+  link: { flexDirection: 'row', alignSelf: 'center' },
+  titleImage: { width: 250, height: 200, top: 70, position: 'absolute', alignSelf: 'center' },
+  label: { fontSize: 18 },
 });

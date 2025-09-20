@@ -6,11 +6,27 @@ interface AuthRequest extends Request {
   user?: any;
 }
 
-// Create Customer (unchanged)
 export const createCustomer = async (req: Request, res: Response) => {
   try {
     const { cust_name, cust_bdate, cust_address, cust_contact, cust_email } = req.body;
 
+    if (!cust_name || !cust_bdate) {
+      return res.status(400).json({ error: "Name and birthdate are required" });
+    }
+
+    // ✅ Check if a customer with the same name and birthdate already exists
+    const existingCustomer = await Customer.findOne({
+      cust_name: cust_name.trim(),
+      cust_bdate: new Date(cust_bdate),
+    });
+
+    if (existingCustomer) {
+      return res.status(409).json({ 
+        error: "A customer with the same name and birthdate already exists." 
+      });
+    }
+
+    // Optional: Check email uniqueness
     if (cust_email) {
       const existingEmail = await Customer.findOne({ cust_email });
       if (existingEmail) {
@@ -18,18 +34,19 @@ export const createCustomer = async (req: Request, res: Response) => {
       }
     }
 
+    // Generate cust_id
     const prefix = "CUST-00-";
     const lastCustomer = await Customer.findOne({ cust_id: { $regex: `^${prefix}` } }).sort({ cust_id: -1 });
-    let nextNumber = "0001";
+    let nextNumber = "1";
     if (lastCustomer) {
       const lastNum = parseInt(lastCustomer.cust_id.split("-")[2]);
-      nextNumber = String(lastNum + 1).padStart(4, "0");
+      nextNumber = String(lastNum + 1);
     }
 
     const customer = new Customer({
       cust_id: prefix + nextNumber,
-      cust_name,
-      cust_bdate: cust_bdate || null,
+      cust_name: cust_name.trim(),
+      cust_bdate: cust_bdate,
       cust_address: cust_address || null,
       cust_contact: cust_contact || null,
       cust_email: cust_email || null,
@@ -39,6 +56,7 @@ export const createCustomer = async (req: Request, res: Response) => {
 
     await customer.save();
     return res.status(201).json({ message: "Customer created successfully", customer });
+
   } catch (err: any) {
     if (err.code === 11000) {
       const field = Object.keys(err.keyValue)[0];
@@ -47,6 +65,7 @@ export const createCustomer = async (req: Request, res: Response) => {
     return res.status(400).json({ error: err.message });
   }
 };
+
 
 // Login Customer → returns JWT
 export const loginCustomer = async (req: Request, res: Response) => {

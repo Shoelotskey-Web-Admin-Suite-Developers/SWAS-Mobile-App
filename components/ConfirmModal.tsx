@@ -1,35 +1,32 @@
+// src/components/ConfirmModal.tsx
 import { ThemedText } from '@/components/ThemedText';
 import React from 'react';
 import {
-  GestureResponderEvent,
   Modal,
   StyleSheet,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
-interface ErrorModalProps {
+interface ConfirmModalProps {
   visible: boolean;
-  onClose: (event?: GestureResponderEvent) => void;
   title?: string;
   message?: string;
-  buttonLabel?: string;
-  onPressButton?: () => void; // <-- new optional prop
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm?: () => void;
+  onCancel?: () => void;
 }
 
-const ErrorModal: React.FC<ErrorModalProps> = ({
+const ConfirmModal: React.FC<ConfirmModalProps> = ({
   visible,
-  onClose,
-  title = 'Error Signing Up',
-  message = `The name entered is already used...`,
-  buttonLabel = 'Back',
-  onPressButton,
+  title = 'Confirm',
+  message = 'Are you sure?',
+  confirmLabel = 'Yes',
+  cancelLabel = 'No',
+  onConfirm,
+  onCancel,
 }) => {
-  const handlePress = () => {
-    if (onPressButton) onPressButton();
-    else onClose();
-  };
-
   return (
     <Modal transparent animationType="fade" visible={visible}>
       <View style={styles.overlay}>
@@ -41,18 +38,32 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
             {message}
           </ThemedText>
 
-          <TouchableOpacity onPress={handlePress} style={styles.button}>
-            <ThemedText type="button" style={styles.buttonText}>
-              {buttonLabel}
-            </ThemedText>
-          </TouchableOpacity>
+          <View style={styles.buttonsRow}>
+            <TouchableOpacity
+              onPress={onCancel}
+              style={[styles.button, { backgroundColor: '#888' }]}
+            >
+              <ThemedText type="button" style={styles.buttonText}>
+                {cancelLabel}
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onConfirm}
+              style={[styles.button, { backgroundColor: '#D11315' }]}
+            >
+              <ThemedText type="button" style={styles.buttonText}>
+                {confirmLabel}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
   );
 };
 
-export default ErrorModal;
+export default ConfirmModal;
 
 const styles = StyleSheet.create({
   overlay: {
@@ -81,11 +92,17 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#222',
   },
+  buttonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
   button: {
-    backgroundColor: '#D11315',
-    paddingHorizontal: 30,
+    flex: 1,
+    marginHorizontal: 5,
     paddingVertical: 10,
     borderRadius: 24,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -94,5 +111,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontWeight: 'bold',
   },
 });

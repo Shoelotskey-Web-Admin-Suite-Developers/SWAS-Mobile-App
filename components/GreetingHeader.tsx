@@ -1,15 +1,22 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { clearUserId } from '@/utils/session'; // 👈 import clearUserId
+import { unregisterPushToken } from '@/utils/notifPermission'; // 👈 import
+import { clearUserId } from '@/utils/session';
 import { router } from 'expo-router';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function GreetingHeader() {
   const handleLogout = async () => {
     try {
-      await clearUserId(); // 🗑 clear from AsyncStorage
-      router.replace('/welcome/(auth)/login'); // 🔄 go back to login
+      // 1️⃣ Unregister push token from backend
+      await unregisterPushToken();
+
+      // 2️⃣ Clear user ID from AsyncStorage
+      await clearUserId();
+
+      // 3️⃣ Navigate to login
+      router.replace('/welcome/(auth)/login');
     } catch (error) {
       console.error("❌ Logout failed:", error);
     }
@@ -27,7 +34,7 @@ export default function GreetingHeader() {
 
       <TouchableOpacity
         style={styles.logoutButton}
-        onPress={handleLogout} // 👈 use function
+        onPress={handleLogout}
       >
         <IconSymbol
           name="rectangle.portrait.and.arrow.right"

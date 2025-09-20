@@ -1,7 +1,15 @@
 import dotenv from "dotenv";
 import express, { Application, Request, Response } from "express";
-import connectDB from "./db";
-import customerRoutes from "./routes/authRoutes"; // 👈 Import routes
+import http from "http";
+import mongoose from "mongoose";
+import { Server } from "socket.io";
+
+import appointmentsRoute from "./routes/appointmentsRoute";
+import customerRoutes from "./routes/authRoutes";
+import branchRoute from "./routes/branchRoutes";
+import notifTokenRoute from "./routes/notifTokenRoutes";
+import unavailabilityRoutes from "./routes/unavailabilityRoutes";
+import { initSocket } from "./socket"; // your socket logic with change streams
 
 // Load environment variables
 dotenv.config();
@@ -9,8 +17,13 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-connectDB();
+// ✅ Create HTTP server
+const server = http.createServer(app);
+
+// ✅ Setup Socket.IO
+const io = new Server(server, {
+  cors: { origin: "*" },
+});
 
 // Middleware
 app.use(express.json());
@@ -20,10 +33,24 @@ app.get("/", (req: Request, res: Response) => {
   res.send("🚀 API is running...");
 });
 
-// Customer routes
+// Mount routes
 app.use("/api", customerRoutes);
+app.use("/api/notif-token", notifTokenRoute);
+app.use("/api/unavailability", unavailabilityRoutes);
+app.use("/api/appointments", appointmentsRoute);
+app.use("/api/branches", branchRoute);
 
-// Start server
-app.listen(PORT, () => {
+// ✅ Connect to MongoDB and initialize sockets
+const MONGO_URI = process.env.MONGO_URI || "";
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB connected");
+    initSocket(io, mongoose.connection); // pass both Socket.IO and DB connection
+  })
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+// ✅ Start server
+server.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });

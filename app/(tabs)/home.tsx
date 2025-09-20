@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import AnnouncementsModal from '@/components/AnnouncementsModal';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
+import { registerPushToken } from '@/utils/notifPermission';
+
 
 import { router } from 'expo-router';
 import { ImageBackground, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -17,6 +19,10 @@ export default function HomeScreen() {
   const [showModal, setShowModal] = useState(false);
   const { announcements, loading } = useAnnouncements();
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    registerPushToken();
+  }, []);
 
   // Rotate the announcement every 30 seconds
   useEffect(() => {

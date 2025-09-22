@@ -1,14 +1,14 @@
 // src/utils/api/getAppointment.ts
 import { getUserId } from "../session";
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
 
 export const getAppointment = async () => {
   try {
     const cust_id = await getUserId();
     if (!cust_id) throw new Error("Customer ID not found in session storage");
 
-    const url = `${API_BASE_URL}/appointments/customer/${cust_id}`;
+    const url = `${API_BASE_URL}/api/appointments/customer/${cust_id}`;
     const res = await fetch(url, {
       method: "GET",
       headers: { "Content-Type": "application/json" },

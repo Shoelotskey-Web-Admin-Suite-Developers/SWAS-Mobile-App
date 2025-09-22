@@ -3,7 +3,7 @@ import { getUserId } from "@/utils/session";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
-const BACKEND_URL = `${process.env.EXPO_PUBLIC_API_BASE_URL}/notif-token`;
+const BACKEND_URL = `${(process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '')}/api/notif-token`;
 
 /**
  * Request permission, get Expo push token, and send it to backend.

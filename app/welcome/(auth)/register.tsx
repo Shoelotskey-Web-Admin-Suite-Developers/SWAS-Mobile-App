@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
 
 export default function RegisterScreen() {
   const [firstName, setFirstName] = useState('');
@@ -42,17 +42,35 @@ export default function RegisterScreen() {
       setShowError(true);
       return;
     }
+    // Require at least one contact method: email or phone number
+    const emailTrim = (email || '').trim();
+    const phoneTrim = (phoneNumber || '').trim();
+    if (!emailTrim && !phoneTrim) {
+      setErrorMessage('Please provide at least one contact: email or phone number.');
+      setShowError(true);
+      return;
+    }
+
+    // If email provided, perform a basic email format validation
+    if (emailTrim) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailTrim)) {
+        setErrorMessage('Please enter a valid email address.');
+        setShowError(true);
+        return;
+      }
+    }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/customers`, {
+      const res = await fetch(`${API_BASE_URL}/api/customers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cust_name: `${firstName.trim()} ${lastName.trim()}`,
           cust_bdate: birthday.toISOString(),
           cust_address: address || undefined,
-          cust_contact: phoneNumber || undefined,
-          cust_email: email || undefined,
+          cust_contact: phoneTrim || undefined,
+          cust_email: emailTrim || undefined,
         }),
       });
 

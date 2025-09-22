@@ -4,10 +4,12 @@ import http from "http";
 import mongoose from "mongoose";
 import { Server } from "socket.io";
 
+import announcementsRoute from "./routes/announcementsRoutes";
 import appointmentsRoute from "./routes/appointmentsRoute";
 import customerRoutes from "./routes/authRoutes";
 import branchRoute from "./routes/branchRoutes";
 import notifTokenRoute from "./routes/notifTokenRoutes";
+import promosRoute from "./routes/promosRoutes";
 import unavailabilityRoutes from "./routes/unavailabilityRoutes";
 import { initSocket } from "./socket"; // your socket logic with change streams
 
@@ -39,6 +41,8 @@ app.use("/api/notif-token", notifTokenRoute);
 app.use("/api/unavailability", unavailabilityRoutes);
 app.use("/api/appointments", appointmentsRoute);
 app.use("/api/branches", branchRoute);
+app.use("/api/announcements", announcementsRoute);
+app.use("/api/promos", promosRoute);
 
 // ✅ Connect to MongoDB and initialize sockets
 const MONGO_URI = process.env.MONGO_URI || "";

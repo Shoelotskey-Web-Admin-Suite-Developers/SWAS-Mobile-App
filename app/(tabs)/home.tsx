@@ -1,22 +1,24 @@
 import AnnouncementCard from '@/components/AnnouncementCard';
+import AnnouncementsModal from '@/components/AnnouncementsModal';
 import GreetingHeader from '@/components/GreetingHeader';
 import HeroLogo from '@/components/HeroLogo';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import PromosModal from '@/components/PromosModal';
 import QuickActionsRow from '@/components/QuickActionsRow';
 import ServicesCarousel from '@/components/ServicesCarousel';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import AnnouncementsModal from '@/components/AnnouncementsModal';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { registerPushToken } from '@/utils/notifPermission';
 
 
 import { router } from 'expo-router';
-import { ImageBackground, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useEffect, useState } from 'react';
+import { ImageBackground, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
   const [showModal, setShowModal] = useState(false);
+  const [showPromosModal, setShowPromosModal] = useState(false);
   const { announcements, loading } = useAnnouncements();
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -45,38 +47,33 @@ export default function HomeScreen() {
         <GreetingHeader />
         <HeroLogo />
 
-        {!loading && announcements.length > 0 && (
-          <AnnouncementCard
-            date={announcements[currentIndex].date}
-            title={announcements[currentIndex].title}
-            description={announcements[currentIndex].description}
-          />
-        )}
-
-        {!loading && announcements.length === 0 && (
-          <ThemedText type="subtitle2" style={styles.emptyText}>
-            No announcements yet.
-          </ThemedText>
-        )}
+        <AnnouncementCard
+          loading={loading}
+          date={announcements && announcements.length > 0 ? announcements[currentIndex].date : ''}
+          title={announcements && announcements.length > 0 ? announcements[currentIndex].title : 'No announcements yet.'}
+          description={announcements && announcements.length > 0 ? announcements[currentIndex].description : 'There are currently no announcements. Check back later or open the announcements panel.'}
+          branchName={announcements && announcements.length > 0 ? announcements[currentIndex].branchName : undefined}
+        />
 
         <View style={styles.divider} />
 
-        <QuickActionsRow onAnnouncementsPress={() => setShowModal(true)} />
+  <QuickActionsRow onAnnouncementsPress={() => setShowModal(true)} onPromosPress={() => setShowPromosModal(true)} />
 
         <View style={styles.divider} />
 
         <ThemedView style={styles.servicesSection}>
           <View style={styles.servicesHeader}>
-            <ThemedText type="titleSmall" style={styles.servicesSection}>Services Offered</ThemedText>
+            <ThemedText type="titleSmall" style={styles.servicesTitle}>Services Offered</ThemedText>
             <TouchableOpacity onPress={() => router.push('/services')}>
-              <ThemedText type="link">View All ></ThemedText>
+              <ThemedText type="link">View All {'>'}</ThemedText>
             </TouchableOpacity>
           </View>
           <ServicesCarousel />
         </ThemedView>
       </ParallaxScrollView>
 
-      <AnnouncementsModal visible={showModal} onClose={() => setShowModal(false)} />
+  <AnnouncementsModal visible={showModal} onClose={() => setShowModal(false)} />
+  <PromosModal visible={showPromosModal} onClose={() => setShowPromosModal(false)} />
     </ImageBackground>
   );
 }
@@ -107,6 +104,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
     paddingHorizontal: 16,
+  },
+  servicesTitle: {
+    // ensure vertical centering next to the 'View All' link
+    lineHeight: 20,
+    marginTop: 0,
+    marginBottom: 0,
+    paddingVertical: 0,
   },
   emptyText: {
     textAlign: 'center',

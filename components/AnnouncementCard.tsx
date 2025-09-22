@@ -1,13 +1,14 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ScrollView, StyleSheet, View } from 'react-native';
-
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 type Props = {
-  date: string;
-  title: string;
-  description: string;
+  date?: string;
+  title?: string;
+  description?: string;
+  branchName?: string;
+  loading?: boolean;
 };
 
-export default function AnnouncementCard({ date, title, description }: Props) {
+export default function AnnouncementCard({ date, title, description, branchName, loading }: Props) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -17,16 +18,34 @@ export default function AnnouncementCard({ date, title, description }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <ThemedText type="subtitle2" style={styles.date}>
-          Posted on {date}
-        </ThemedText>
-
-        <View style={styles.content}>
-          <View>
-            <ThemedText type="subtitle1" style={styles.contentText}>{title}</ThemedText>
-            <ThemedText type="default" style={styles.contentText}>{description}</ThemedText>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#D11315" />
+            <ThemedText type="default" style={styles.loadingText}>Loading announcements...</ThemedText>
           </View>
-        </View>
+        ) : (
+          <>
+            {branchName ? (
+              <View style={styles.branchTagWrapper} pointerEvents="none">
+                <View style={styles.branchTag}>
+                  <ThemedText type="option" style={styles.branchText}>{branchName}</ThemedText>
+                </View>
+              </View>
+            ) : null}
+            {date ? (
+              <ThemedText type="subtitle2" style={styles.date}>
+                Posted on {date}
+              </ThemedText>
+            ) : null}
+
+            <View style={styles.content}>
+              <View>
+                <ThemedText type="subtitle1" style={styles.contentText}>{title}</ThemedText>
+                <ThemedText type="default" style={styles.contentText}>{description}</ThemedText>
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -56,7 +75,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   date: {
-    marginTop: 6,
+    marginTop: 8,
     marginHorizontal: 12,
     color: '#888',
   },
@@ -69,5 +88,34 @@ const styles = StyleSheet.create({
   },
   contentText: {
     color: '#00000ff',
+  }
+  ,
+  loadingContainer: {
+    padding: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    color: '#666',
+  },
+  branchTagWrapper: {
+    position: 'absolute',
+    top: 4,
+    right: 8,
+    zIndex: 10,
+  },
+  branchTag: {
+    backgroundColor: '#FFF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    elevation: 2,
+  },
+  branchText: {
+    fontSize: 12,
+    color: '#333',
   }
 });

@@ -30,7 +30,7 @@ export default function QuickAction({ icon, label, badgeCount, onPress }: Props)
 
 const styles = StyleSheet.create({
   card: {
-    width: 95,
+    width: 100,
     padding: 8,
     borderRadius: 12,
     backgroundColor: 'white',

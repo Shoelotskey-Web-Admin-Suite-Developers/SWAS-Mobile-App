@@ -1,10 +1,10 @@
 // components/AnnouncementsModal.tsx
+import { useAnnouncements } from '@/hooks/useAnnouncements';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
-import { useState } from 'react';
-import { Announcement, useAnnouncements } from '@/hooks/useAnnouncements';
-import { Ionicons } from '@expo/vector-icons';
 
 type Props = {
   visible: boolean;
@@ -12,7 +12,7 @@ type Props = {
 };
 
 export default function AnnouncementsModal({ visible, onClose }: Props) {
-  const { announcements, readIds, markAsRead } = useAnnouncements();
+  const { announcements, readIds, markAsRead, loading } = useAnnouncements();
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
 
   const toggleExpand = (id: string) => {
@@ -33,7 +33,17 @@ export default function AnnouncementsModal({ visible, onClose }: Props) {
           </ThemedText>
 
           <ScrollView contentContainerStyle={styles.list}>
-            {announcements.map(announcement => {
+            {!loading && (!announcements || announcements.length === 0) ? (
+              <View style={styles.placeholder}>
+                <ThemedText type="titleSmall" style={styles.placeholderTitle}>
+                  No announcements yet
+                </ThemedText>
+                <ThemedText type="default" style={styles.placeholderText}>
+                  There are currently no announcements. Check back later or open the announcements panel.
+                </ThemedText>
+              </View>
+            ) : (
+              announcements.map(announcement => {
               const isRead = readIds.includes(announcement.id);
               const isExpanded = expandedIds.includes(announcement.id);
 
@@ -44,9 +54,16 @@ export default function AnnouncementsModal({ visible, onClose }: Props) {
                   onPress={() => toggleExpand(announcement.id)}
                 >
                   <View style={styles.topRow}>
-                    <ThemedText type="button" style={styles.date}>
-                      Posted on {announcement.date}
-                    </ThemedText>
+                    <View>
+                      <ThemedText type="button" style={styles.date}>
+                        Posted on {announcement.date}
+                      </ThemedText>
+                      {announcement.branchName ? (
+                        <ThemedText type="subtitle2" style={styles.branchName}>
+                          {announcement.branchName}
+                        </ThemedText>
+                      ) : null}
+                    </View>
                     {!isRead && (
                       <View style={styles.unreadDot}>
                         <ThemedText type="option" style={styles.excl}>
@@ -56,7 +73,12 @@ export default function AnnouncementsModal({ visible, onClose }: Props) {
                     )}
                   </View>
 
-                  <ThemedText type="button" style={styles.title}>
+                  <ThemedText
+                    type="button"
+                    style={styles.title}
+                    numberOfLines={isExpanded ? undefined : 1}
+                    ellipsizeMode={isExpanded ? 'clip' : 'tail'}
+                  >
                     {announcement.title}
                   </ThemedText>
 
@@ -67,7 +89,8 @@ export default function AnnouncementsModal({ visible, onClose }: Props) {
                   )}
                 </Pressable>
               );
-            })}
+              })
+            )}
           </ScrollView>
 
           <Pressable onPress={onClose} style={styles.closeBtn}>
@@ -116,6 +139,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: -7,
   },
+  branchName: {
+    color: '#9a9a9aff',
+    fontSize: 12,
+    marginTop: 4,
+  },
   title: {
     marginTop: 4,
     color: '#000000ff',
@@ -145,5 +173,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#D11315',
     padding: 8,
     borderRadius: 20,
+  },
+  placeholder: {
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderTitle: {
+    color: '#000',
+    marginBottom: 8,
+  },
+  placeholderText: {
+    color: '#666',
+    textAlign: 'center',
   },
 });

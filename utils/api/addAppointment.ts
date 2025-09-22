@@ -1,6 +1,6 @@
 // src/utils/api/addAppointment.ts
 import { getUserId } from "../session"; // ✅ import getUserId
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
 
 interface AddAppointmentPayload {
   branch_id: string;
@@ -17,7 +17,7 @@ export const addAppointment = async (payload: AddAppointmentPayload) => {
     if (!cust_id) throw new Error("Customer ID not found in session storage");
 
     // Send POST request to backend
-    const res = await fetch(`${API_BASE_URL}/appointments`, {
+  const res = await fetch(`${API_BASE_URL}/api/appointments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

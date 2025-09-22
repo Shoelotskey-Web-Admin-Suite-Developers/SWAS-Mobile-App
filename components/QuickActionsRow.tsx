@@ -1,16 +1,19 @@
 import QuickAction from '@/components/QuickAction';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useAnnouncements } from '@/hooks/useAnnouncements';
+import { usePromos } from '@/hooks/usePromos';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { useAnnouncements } from '@/hooks/useAnnouncements';
 
 type Props = {
   onAnnouncementsPress: () => void;
+  onPromosPress?: () => void;
 };
 
-export default function QuickActionsRow({ onAnnouncementsPress }: Props) {
+export default function QuickActionsRow({ onAnnouncementsPress, onPromosPress }: Props) {
   const { unreadCount } = useAnnouncements();
+  const { unreadCount: promosUnread } = usePromos();
 
   return (
     <ThemedView style={styles.section}>
@@ -25,8 +28,9 @@ export default function QuickActionsRow({ onAnnouncementsPress }: Props) {
 
         <QuickAction
           icon={require('@/assets/images/appointment-icon.png')}
-          label={`Book\nAppointment`}
-          onPress={() => router.push('/book')}
+          label={`View\nPromos`}
+          badgeCount={promosUnread}
+          onPress={onPromosPress || (() => router.push('/book'))}
         />
 
         <QuickAction
@@ -52,7 +56,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 24,
-    marginHorizontal: 9,
-    gap: 5,
+    marginHorizontal: 3,
+    gap: 8,
   },
 });

@@ -1,9 +1,9 @@
 // src/utils/api/getBranches.ts
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL; // or VITE_API_BASE_URL depending on setup
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, ''); // or VITE_API_BASE_URL depending on setup
 
 export const getBranches = async () => {
   try {
-    const res = await fetch(`${API_BASE_URL}/branches/b`, {
+  const res = await fetch(`${API_BASE_URL}/api/branches/b`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });

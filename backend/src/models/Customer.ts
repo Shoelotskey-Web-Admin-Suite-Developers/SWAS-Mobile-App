@@ -27,10 +27,7 @@ const CustomerSchema: Schema<ICustomer> = new Schema<ICustomer>(
 );
 
 // Partial index for emails — ensures uniqueness only for non-null values
-CustomerSchema.index(
-  { cust_email: 1 },
-  { unique: true, partialFilterExpression: { cust_email: { $type: "string" } } }
-);
+// Note: cust_email is intentionally not unique now; allow multiple customers to share the same email.
 
 // Explicit collection name
 export const Customer = mongoose.model<ICustomer>("Customer", CustomerSchema, "customers");

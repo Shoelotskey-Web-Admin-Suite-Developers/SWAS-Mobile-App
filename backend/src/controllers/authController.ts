@@ -26,13 +26,7 @@ export const createCustomer = async (req: Request, res: Response) => {
       });
     }
 
-    // Optional: Check email uniqueness
-    if (cust_email) {
-      const existingEmail = await Customer.findOne({ cust_email });
-      if (existingEmail) {
-        return res.status(409).json({ error: "The email provided is already used by another customer." });
-      }
-    }
+    // Note: we no longer enforce email uniqueness. Multiple customers may share the same email.
 
     // Generate cust_id
     const prefix = "CUST-00-";
@@ -135,6 +129,27 @@ export const getCustomerById = async (req: AuthRequest, res: Response) => {
     }
 
     return res.json({ customer });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+// Get customer's first name (first word of cust_name)
+export const getCustomerFirstName = async (req: AuthRequest, res: Response) => {
+  try {
+    const customer = await Customer.findOne({ cust_id: req.params.id });
+    if (!customer) return res.status(404).json({ error: "Customer not found" });
+
+    // If a token is present, ensure requester owns the profile.
+    // If no token is provided, allow public access to the first name only.
+    if (req.user && req.user?.cust_id !== customer.cust_id) {
+      return res.status(403).json({ error: "Forbidden: Access denied" });
+    }
+
+    const fullName = (customer.cust_name || "").trim();
+    const firstName = fullName.split(/\s+/)[0] || "";
+
+    return res.json({ firstName });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

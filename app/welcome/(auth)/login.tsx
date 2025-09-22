@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 
 const { height } = Dimensions.get('window');
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
 
 export default function LoginScreen() {
   const [firstName, setFirstName] = useState('');
@@ -45,7 +45,7 @@ export default function LoginScreen() {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/customers/login`, {
+  const res = await fetch(`${API_BASE_URL}/api/customers/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

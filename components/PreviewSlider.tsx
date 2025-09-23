@@ -1,20 +1,19 @@
 import React, { useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    Image,
-    ImageSourcePropType,
-    LayoutChangeEvent,
-    PanResponder,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Image,
+  LayoutChangeEvent,
+  PanResponder,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 type Props = {
-  beforeImage: ImageSourcePropType;
-  afterImage: ImageSourcePropType;
+  beforeImage: string; // change to string
+  afterImage: string;  // change to string
   onClose: () => void;
 };
 
@@ -52,11 +51,17 @@ export default function PreviewSlider({ beforeImage, afterImage, onClose }: Prop
       </TouchableOpacity>
 
       {/* After Image (background) */}
-      <Image source={afterImage} style={[styles.image, { width: containerWidth }]} />
+      <Image
+        source={afterImage ? { uri: afterImage } : require('@/assets/images/sample-after.png')}
+        style={[styles.image, { width: containerWidth }]}
+      />
 
       {/* Before Image (overlay) */}
       <Animated.View style={[styles.overlayContainer, { width: panX }]}>
-        <Image source={beforeImage} style={[styles.image, { width: containerWidth }]} />
+        <Image
+          source={beforeImage ? { uri: beforeImage } : require('@/assets/images/sample-before.png')}
+          style={[styles.image, { width: containerWidth }]}
+        />
       </Animated.View>
 
       {/* Draggable Divider */}

@@ -1,7 +1,7 @@
 import ErrorModal from '@/components/ErrorSignUpModal'; // ✅ import modal
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { saveUserId } from "@/utils/session";
+import { saveUserId, saveUserToken } from "@/utils/session";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
@@ -45,7 +45,7 @@ export default function LoginScreen() {
     }
 
     try {
-  const res = await fetch(`${API_BASE_URL}/api/customers/login`, {
+      const res = await fetch(`${API_BASE_URL}/api/customers/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -60,8 +60,11 @@ export default function LoginScreen() {
       if (res.ok) {
         if (data.userId) {
           await saveUserId(data.userId);
-          console.log("Login response:", data);
         }
+        if (data.token) {
+          await saveUserToken(data.token);
+        }
+        console.log("Login response:", data);
         router.replace("/(tabs)/home");
       } else {
         setErrorMessage(data.error || "❌ Login failed");

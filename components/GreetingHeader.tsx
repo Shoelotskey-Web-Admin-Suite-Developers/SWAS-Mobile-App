@@ -19,8 +19,9 @@ export default function GreetingHeader() {
         const cust_id = await getUserId();
         if (!cust_id) return;
 
-  const base = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
-  const res = await fetch(`${base}/api/customers/${cust_id}/first-name`);
+        const base = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
+        const res = await fetch(`${base}/api/customers/${cust_id}/first-name`);
+        
         if (!res.ok) return;
         const data = await res.json();
         if (mounted) setFirstName(data.firstName || null);

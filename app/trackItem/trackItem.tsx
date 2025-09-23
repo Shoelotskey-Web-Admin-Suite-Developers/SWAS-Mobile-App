@@ -1,68 +1,143 @@
 import HeaderConfig from '@/components/HeaderConfig';
 import PreviewSlider from '@/components/PreviewSlider';
 import { ThemedText } from '@/components/ThemedText';
+import { getCustName } from '@/utils/api/getCustName';
+import { getDatesByLineItemId } from '@/utils/api/getDatesByLineItemId';
+import { getLineItemById } from '@/utils/api/getLineItemById';
+import { getServiceName } from '@/utils/api/getServiceName';
+import { getTransactionsById } from '@/utils/api/getTransactionsById';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
 
 export default function TrackItemScreen() {
   const { receiptId, trackNumber, customerId } = useLocalSearchParams();
 
+  const [lineItem, setLineItem] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [customerName, setCustomerName] = useState<string>('Customer Name');
+  const [serviceNames, setServiceNames] = useState<string[]>([]);
+  const [transaction, setTransaction] = useState<any>(null);
+  const [dates, setDates] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchLineItem = async () => {
+      if (!trackNumber) return;
+      setLoading(true);
+      const data = await getLineItemById(trackNumber as string);
+      setLineItem(data);
+      setLoading(false);
+
+      // Fetch service names
+      if (data?.services && Array.isArray(data.services)) {
+        const names = await Promise.all(
+          data.services.map(async (s: any) => {
+            const name = await getServiceName(s.service_id);
+            return name ? `${name} (${s.quantity})` : `${s.service_id} (${s.quantity})`;
+          })
+        );
+        setServiceNames(names);
+      }
+    };
+    fetchLineItem();
+  }, [trackNumber]);
+
+  useEffect(() => {
+    const fetchName = async () => {
+      const name = await getCustName();
+      if (name) setCustomerName(name);
+    };
+    fetchName();
+  }, []);
+
+  useEffect(() => {
+    const fetchDates = async () => {
+      if (!lineItem?.line_item_id) return;
+      const data = await getDatesByLineItemId(lineItem.line_item_id);
+      setDates(data);
+    };
+    if (lineItem?.line_item_id) {
+      fetchDates();
+    }
+  }, [lineItem?.line_item_id]);
+
+  // Define the mapping between date keys and labels
+  const statusLabels = [
+    { key: "srm_date", label: "Shoes acknowledged in shop", statusValue: [1] },
+    { key: "rd_date", label: "In transport to Hub for service", statusValue: [2, 3] },
+    { key: "wh_date", label: "Arrived in Hub - In process", statusValue: [4] },
+    { key: "rb_date", label: "Returning to assigned service branch", statusValue: [ 5, 6] },
+    { key: "rpu_date", label: "Ready for Pickup", statusValue: [7] },
+  ];
+
+  // Map dates to timeline steps
+  const mappedStatuses = statusLabels.map((item) => ({
+    date: dates && dates[item.key] ? formatDateMDYY(dates[item.key]) : "",
+    label: item.label,
+  }));
+
+  // Map lineItem data to UI fields
   const order = {
-    customerName: 'Customer Name',
-    customerId: customerId ?? '1578',
-    branch: 'SM Valenzuela Branch',
-    estimatedPickup: '07-06-2025',
-    shoeModel: 'Nike Air Force 1',
-    services: 'Basic Cleaning + Sole Unyellowing',
-    isRush: true,
-    currentStatus: 3,
-    statuses: [
-      {
-        date: '30 May 18:29',
-        label: 'Shoes acknowledged in shop',
-      },
-      {
-        date: '3 June 08:30',
-        label: 'In transport to Hub for service',
-      },
-      {
-        date: '30 May 18:29',
-        label: 'Arrived in Hub - In process',
-      },
-      {
-        date: '30 May 18:29',
-        label: 'Returning to assigned service branch',
-      },
-      {
-        date: '30 May 18:29',
-        label: 'Ready for Pickup',
-      },
-    ],
+    customerName,
+    customerId: customerId ?? lineItem?.cust_id ?? '',
+    branch: lineItem?.branch_id ?? '',
+    location: lineItem?.current_location ?? '', 
+    estimatedPickup: formatDateMDYY(lineItem?.due_date),
+    shoeModel: lineItem?.shoes ?? '',
+    services: serviceNames.join(' + '),
+    isRush: lineItem?.priority === 'Rush',
+    currentStatus: dates?.current_status ?? 0, // Use current_status from dates
+    statuses: mappedStatuses, // <-- Use the mapped statuses here
     previewImages: [
-        'https://example.com/shoe-before.jpg',
-        'https://example.com/shoe-after.jpg',
+      // You can update this later
+      lineItem?.before_img ?? '', // URL string or empty
+      lineItem?.after_img ?? '',  // URL string or empty
     ],
-    receiptId: receiptId ?? '2025-0015-VAL',
-    trackNumber: trackNumber ?? 'O1',
+    // new flag: preview is considered available when there's an after image
+    previewAvailable: !!lineItem?.after_img,
+    receiptId: lineItem?.transaction_id ?? receiptId ?? '',
+    trackNumber: lineItem?.line_item_id ?? trackNumber ?? '',
     payment: {
-      total: 350,
-      paid: 175,
+      total: transaction?.total_amount ?? 0,
+      paid: transaction?.amount_paid ?? 0,
+      status: transaction?.payment_status ?? 'NP',
     },
   };
 
+  useEffect(() => {
+    const fetchTransaction = async () => {
+      if (!order.receiptId) return;
+      const tx = await getTransactionsById(order.receiptId);
+      setTransaction(tx);
+    };
+    if (order.receiptId) {
+      fetchTransaction();
+    }
+  }, [order.receiptId]);
+
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
-  const percentagePaid = order.payment.paid / order.payment.total;
+  const percentagePaid = order.payment.total
+    ? order.payment.paid / order.payment.total
+    : 0;
   const paymentPercentDisplay = Math.round(percentagePaid * 100);
 
   let paymentBadgeText = 'Unpaid';
-  if (percentagePaid >= 1) {
+  if (order.payment.status === 'PAID') {
     paymentBadgeText = 'Fully Paid';
-  } else if (percentagePaid > 0) {
+  } else if (order.payment.status === 'PARTIAL') {
     paymentBadgeText = 'Partially Paid';
+  }
+
+  if (loading) {
+    return (
+      <>
+        <HeaderConfig title="Track Service" />
+        <ThemedText style={{ padding: 20 }}>Loading...</ThemedText>
+      </>
+    );
   }
 
   return (
@@ -104,89 +179,83 @@ export default function TrackItemScreen() {
       <View style={styles.card}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
             <MaterialIcons name="location-on" size={20} color="#1E1E1E" style={{ marginRight: 6 }} />
-            <ThemedText type="subtitle1">Current Shoes Location: {order.branch}</ThemedText>
+            <ThemedText type="subtitle1">Current Shoes Location: {order.location}</ThemedText>
         </View>
 
 
         {order.statuses.map((step, index) => {
+          const statusValues = statusLabels[index].statusValue;
           let color = '#C4C4C4';
           let iconName = 'radio-button-unchecked';
-          if (index < order.currentStatus) {
-            color = 'black';
-            iconName = 'check-circle';
-          } else if (index === order.currentStatus) {
-            color = '#C40000';
+
+          if (statusValues.includes(order.currentStatus)) {
+            color = '#C40000'; // red (active)
             iconName = 'radio-button-checked';
+          } else if (order.currentStatus > Math.max(...statusValues)) {
+            color = 'black'; // completed
+            iconName = 'check-circle';
           }
 
           return (
             <View key={index} style={styles.statusRow}>
-                <View style={styles.timelineWrapper}>
-                    <MaterialIcons name={iconName as any} size={20} color={color} />
-                    {/* Show vertical line except on last item */}
-                    {index !== order.statuses.length - 1 && (
-                    <View
-                        style={[
-                        styles.verticalLine,
-                        {
-                            height: index === 3 ? 53 : 32, // Custom height for index 3
-                            backgroundColor:
-                            index < order.currentStatus
-                                ? 'black'
-                                : index === order.currentStatus
-                                ? '#C40000'
-                                : '#C4C4C4',
-                        },
-                        ]}
-                    />
-                    )}
+              <View style={styles.timelineWrapper}>
+                <MaterialIcons name={iconName as any} size={20} color={color} />
+                {index !== order.statuses.length - 1 && (
+                  <View
+                    style={[
+                      styles.verticalLine,
+                      {
+                        height: index === 2 ? 53 : 32, // changed from index === 3
+                        backgroundColor: color,
+                      },
+                    ]}
+                  />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <ThemedText style={{ color }}>{step.date}</ThemedText>
+                <ThemedText
+                  type='bold'
+                  style={{
+                    color,
+                    fontWeight: statusValues.includes(order.currentStatus) ? 'bold' : 'normal',
+                  }}
+                >
+                  {step.label}
+                </ThemedText>
 
-                    </View>
-
-                    <View style={{ flex: 1 }}>
-                    <ThemedText style={{ color }}>{step.date}</ThemedText>
-                    <ThemedText
-                        type='bold'
+                {index === 2 && ( // changed from index === 3
+                <TouchableOpacity
+                    disabled={!order.previewAvailable}
+                    onPress={() => setIsPreviewVisible(true)}
+                >
+                    <View style={styles.previewRow}>
+                    <MaterialIcons
+                        name="image"
+                        size={16}
+                        color={color}
                         style={{
-                        color,
-                        fontWeight: index === order.currentStatus ? 'bold' : 'normal',
+                        marginRight: 4,
+                        opacity: order.previewAvailable ? 1 : 0.4,
                         }}
+                    />
+                    <ThemedText
+                        type="option"
+                        style={[
+                        styles.previewNote,
+                        { color, opacity: order.previewAvailable ? 1 : 0.5 },
+                        ]}
                     >
-                        {step.label}
+                        {order.previewAvailable
+                        ? 'Shoes preview is available. Tap here'
+                        : 'Photo will be added once shoes are ready'}
                     </ThemedText>
-
-                    {index === 3 && (
-                    <TouchableOpacity
-                        disabled={order.previewImages.length === 0}
-                        onPress={() => setIsPreviewVisible(true)}
-                    >
-                        <View style={styles.previewRow}>
-                        <MaterialIcons
-                            name="image"
-                            size={16}
-                            color={color}
-                            style={{
-                            marginRight: 4,
-                            opacity: order.previewImages?.length > 0 ? 1 : 0.4,
-                            }}
-                        />
-                        <ThemedText
-                            type="option"
-                            style={[
-                            styles.previewNote,
-                            { color, opacity: order.previewImages?.length > 0 ? 1 : 0.5 },
-                            ]}
-                        >
-                            {order.previewImages?.length > 0
-                            ? 'Shoes preview is available. Tap here'
-                            : 'Shoes preview unavailable'}
-                        </ThemedText>
-                        </View>
-                    </TouchableOpacity>
-                    )}
                     </View>
-                </View>
-            );
+                </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          );
 
         })}
       </View>
@@ -233,9 +302,12 @@ export default function TrackItemScreen() {
             </View>
         </View>
 
+        
+
 
         <ProgressBar progress={percentagePaid} color="#C40000" style={styles.progress} />
         <ThemedText style={{ textAlign: 'center', marginTop: 4 }}>{paymentPercentDisplay}% Paid</ThemedText>
+        <ThemedText style={{ textAlign: 'center', marginTop: 5 , fontSize: 11.5,}}>(This payment breakdown covers all items in this transaction)</ThemedText>
       </View>
     </ScrollView>
     
@@ -244,8 +316,8 @@ export default function TrackItemScreen() {
         <View style={styles.modalBackground}>
             <View style={styles.modalCentered}>
             <PreviewSlider
-                beforeImage={require('@/assets/images/sample-before.png')}
-                afterImage={require('@/assets/images/sample-after.png')}
+                beforeImage={order.previewImages[0]}
+                afterImage={order.previewImages[1]}
                 onClose={() => setIsPreviewVisible(false)}
             />
             <ThemedText type="subtitle1" style={{paddingTop: 20, paddingHorizontal: 20, textAlign:"center", color:"#fff"}}>Drag the handle to view the shoe before and after cleaning.</ThemedText>
@@ -362,3 +434,12 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
 });
+
+function formatDateMDYY(dateString?: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const month = date.getMonth() + 1; // Months are 0-indexed
+  const day = date.getDate();
+  const year = date.getFullYear().toString().slice(-2); // Last two digits
+  return `${month}-${day}-${year}`;
+}

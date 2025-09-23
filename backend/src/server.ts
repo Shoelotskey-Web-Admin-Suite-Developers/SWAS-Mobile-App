@@ -8,8 +8,12 @@ import announcementsRoute from "./routes/announcementsRoutes";
 import appointmentsRoute from "./routes/appointmentsRoute";
 import customerRoutes from "./routes/authRoutes";
 import branchRoute from "./routes/branchRoutes";
+import datesRoutes from "./routes/datesRoutes";
+import lineItemRoutes from "./routes/lineItemRoutes"; // Adjust path if needed
 import notifTokenRoute from "./routes/notifTokenRoutes";
 import promosRoute from "./routes/promosRoutes";
+import serviceRoutes from "./routes/servicesRoutes";
+import transactionRoutes from "./routes/transactionRoutes";
 import unavailabilityRoutes from "./routes/unavailabilityRoutes";
 import { initSocket } from "./socket"; // your socket logic with change streams
 
@@ -43,11 +47,18 @@ app.use("/api/appointments", appointmentsRoute);
 app.use("/api/branches", branchRoute);
 app.use("/api/announcements", announcementsRoute);
 app.use("/api/promos", promosRoute);
+app.use("/api", lineItemRoutes); // Use the line item routes
+app.use("/api/services", serviceRoutes); // <-- Add this line
+app.use("/api", transactionRoutes);
+app.use("/api/dates", datesRoutes);
 
 // ✅ Connect to MongoDB and initialize sockets
-const MONGO_URI = process.env.MONGO_URI || "";
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/swas";
 mongoose
-  .connect(MONGO_URI)
+  .connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("✅ MongoDB connected");
     initSocket(io, mongoose.connection); // pass both Socket.IO and DB connection

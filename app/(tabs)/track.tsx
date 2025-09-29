@@ -2,10 +2,11 @@ import type { ILineItemService } from '@/backend/src/models/LineItem';
 import HeaderConfig from '@/components/HeaderConfig';
 import { ThemedText } from '@/components/ThemedText';
 import TrackServiceCard from '@/components/TrackServiceCard';
+import { useSocket } from '@/hooks/useSocket'; // Import socket hook
 import { getLineItems } from '@/utils/api/getLineItems';
-import { getServiceName } from '@/utils/api/getServiceName'; // <-- import helper
+import { getServiceName } from '@/utils/api/getServiceName';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -15,7 +16,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F2',
   },
   sectionHeader: {
-    
     color: '#C40000',
   },
   note: {
@@ -29,7 +29,137 @@ export default function TrackServiceScreen() {
   const [serviceNames, setServiceNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  
+  // Initialize socket
+  const {
+    joinLineItem,
+    leaveLineItem,
+    onDatesUpdated,
+    onLineItemUpdated,
+    offDatesUpdated,
+    offLineItemUpdated,
+  } = useSocket();
 
+  // Memoized callback for handling line item updates
+  const handleLineItemUpdate = useCallback((data: any) => {
+    if (!data?.lineItemId) return;
+    
+    console.log('📱 [Track] Received line item update:', data.lineItemId);
+    
+    if (data.fullDocument && data.operationType !== 'delete') {
+      // Update existing item or add new one
+      setLineItems(prevItems => {
+        const existingIndex = prevItems.findIndex(item => 
+          item.line_item_id === data.lineItemId);
+        
+        if (existingIndex !== -1) {
+          // Update existing item
+          const newItems = [...prevItems];
+          newItems[existingIndex] = {
+            ...newItems[existingIndex],
+            ...data.fullDocument,
+          };
+          console.log('✅ [Track] Updated existing line item');
+          return newItems;
+        } else {
+          // Add new item
+          console.log('✅ [Track] Added new line item');
+          return [...prevItems, data.fullDocument];
+        }
+      });
+      
+      // Check if we need to fetch service names for this item
+      if (data.fullDocument.services) {
+        fetchServiceNamesForItem(data.fullDocument);
+      }
+    } else if (data.operationType === 'delete') {
+      // Remove deleted item
+      setLineItems(prevItems => 
+        prevItems.filter(item => item.line_item_id !== data.lineItemId)
+      );
+      console.log('✅ [Track] Removed deleted line item');
+    }
+  }, []);
+
+  // Memoized callback for dates updates (affects "ready for pickup" status)
+  const handleDatesUpdate = useCallback((data: any) => {
+    if (!data?.lineItemId) return;
+    
+    console.log('📱 [Track] Received dates update:', data.lineItemId);
+    
+    if (data.fullDocument) {
+      // Find the line item that this dates update belongs to
+      setLineItems(prevItems => {
+        return prevItems.map(item => {
+          if (item.line_item_id === data.lineItemId) {
+            // Mark the item as needing a status refresh
+            return { ...item, needsStatusRefresh: true };
+          }
+          return item;
+        });
+      });
+      console.log('✅ [Track] Marked line item for status refresh');
+    }
+  }, []);
+
+  // Set up socket listeners
+  useEffect(() => {
+    onLineItemUpdated(handleLineItemUpdate);
+    onDatesUpdated(handleDatesUpdate);
+    
+    return () => {
+      offLineItemUpdated(handleLineItemUpdate);
+      offDatesUpdated(handleDatesUpdate);
+    };
+  }, [handleLineItemUpdate, handleDatesUpdate]);
+
+  // Join socket rooms for all line items
+  useEffect(() => {
+    // Join rooms for all current line items
+    lineItems.forEach(item => {
+      if (item.line_item_id) {
+        joinLineItem(item.line_item_id);
+      }
+    });
+    
+    // Clean up when component unmounts
+    return () => {
+      lineItems.forEach(item => {
+        if (item.line_item_id) {
+          leaveLineItem(item.line_item_id);
+        }
+      });
+    };
+  }, [lineItems.map(item => item.line_item_id).join(',')]);
+
+  // Fetch service names for a specific item
+  const fetchServiceNamesForItem = async (item: any) => {
+    if (!item?.services) return;
+    
+    const newServiceIds = new Set<string>();
+    
+    item.services.forEach((service: ILineItemService) => {
+      if (!serviceNames[service.service_id]) {
+        newServiceIds.add(service.service_id);
+      }
+    });
+    
+    if (newServiceIds.size === 0) return;
+    
+    const newNames: Record<string, string> = {};
+    await Promise.all(
+      Array.from(newServiceIds).map(async (id) => {
+        const name = await getServiceName(id);
+        if (name) newNames[id] = name;
+      })
+    );
+    
+    if (Object.keys(newNames).length > 0) {
+      setServiceNames(prev => ({ ...prev, ...newNames }));
+    }
+  };
+
+  // Initial data fetch
   useEffect(() => {
     const fetchLineItems = async () => {
       setLoading(true);
@@ -90,7 +220,7 @@ export default function TrackServiceScreen() {
             lineItems.map((item, index) => (
               <View key={item.line_item_id || index} style={{ marginBottom: 0 }}>
                 <TrackServiceCard
-                  branch={item.branch_id} // Pass the original branch_id, not the transformed version
+                  branch={item.branch_id}
                   services={(Array.isArray(item.services) ? item.services : [])
                     .map((s: ILineItemService) => `${serviceNames[s.service_id] || s.service_id} (${s.quantity})`)
                     .join(' + ')}
@@ -98,10 +228,17 @@ export default function TrackServiceScreen() {
                   receiptId={item.transaction_id}
                   trackNumber={item.line_item_id}
                   customerId={item.cust_id}
+                  needsStatusRefresh={item.needsStatusRefresh}
                   onPress={() => handlePress(item)}
                 />
               </View>
             ))}
+            
+          {!loading && lineItems.length === 0 && (
+            <ThemedText style={{ textAlign: 'center', marginTop: 50, color: '#666' }}>
+              No service requests found.
+            </ThemedText>
+          )}
         </ScrollView>
       </SafeAreaView>
     </>

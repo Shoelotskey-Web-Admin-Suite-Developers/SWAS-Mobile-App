@@ -1,10 +1,11 @@
 import { ThemedText } from '@/components/ThemedText';
+import { useSocket } from '@/hooks/useSocket'; // Import socket hook
 import { getBranchName } from '@/utils/api/getBranchName';
 import { getDatesByLineItemId } from '@/utils/api/getDatesByLineItemId';
 import { getLineItemById } from '@/utils/api/getLineItemById';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
   receiptId: string;
   trackNumber: string;
   customerId: string;
+  needsStatusRefresh?: boolean;
   onPress?: () => void;
 };
 
@@ -24,6 +26,7 @@ export default function TrackServiceCard({
   receiptId,
   trackNumber,
   customerId,
+  needsStatusRefresh,
   onPress,
 }: Props) {
   const [isReady, setIsReady] = useState(false);
@@ -31,7 +34,58 @@ export default function TrackServiceCard({
   const [previewAvailable, setPreviewAvailable] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(true);
   const [branchName, setBranchName] = useState<string>(branch);
+  
+  // Initialize socket
+  const {
+    joinLineItem,
+    leaveLineItem,
+    onDatesUpdated,
+    onLineItemUpdated,
+    offDatesUpdated,
+    offLineItemUpdated,
+  } = useSocket();
 
+  // Memoized callback for dates updates
+  const handleDatesUpdate = useCallback((data: any) => {
+    if (data.lineItemId !== trackNumber || !data.fullDocument) return;
+    
+    console.log(`📱 [Card-${trackNumber.slice(-4)}] Received dates update`);
+    
+    // Update ready status based on current_status
+    setIsReady(data.fullDocument.current_status === 7);
+    setStatusLoading(false);
+    
+  }, [trackNumber]);
+
+  // Memoized callback for line item updates
+  const handleLineItemUpdate = useCallback((data: any) => {
+    if (data.lineItemId !== trackNumber || !data.fullDocument) return;
+    
+    console.log(`📱 [Card-${trackNumber.slice(-4)}] Received line item update`);
+    
+    // Check for after_img to update preview availability
+    setPreviewAvailable(!!data.fullDocument.after_img);
+    setPreviewLoading(false);
+    
+  }, [trackNumber]);
+
+  // Set up socket listeners
+  useEffect(() => {
+    onDatesUpdated(handleDatesUpdate);
+    onLineItemUpdated(handleLineItemUpdate);
+    
+    // Join specific line item room
+    joinLineItem(trackNumber);
+    
+    return () => {
+      // Clean up listeners and leave room
+      offDatesUpdated(handleDatesUpdate);
+      offLineItemUpdated(handleLineItemUpdate);
+      leaveLineItem(trackNumber);
+    };
+  }, [trackNumber, handleDatesUpdate, handleLineItemUpdate]);
+
+  // Initial data fetch and when needsStatusRefresh changes
   useEffect(() => {
     let mounted = true;
     const fetchData = async () => {
@@ -69,7 +123,7 @@ export default function TrackServiceCard({
     return () => {
       mounted = false;
     };
-  }, [trackNumber, branch]);
+  }, [trackNumber, branch, needsStatusRefresh]); // Added needsStatusRefresh dependency
 
   const handlePress = () => {
     if (onPress) return onPress();

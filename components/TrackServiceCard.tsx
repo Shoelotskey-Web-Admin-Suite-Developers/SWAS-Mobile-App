@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/ThemedText';
+import { getBranchName } from '@/utils/api/getBranchName';
 import { getDatesByLineItemId } from '@/utils/api/getDatesByLineItemId';
 import { getLineItemById } from '@/utils/api/getLineItemById';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -29,12 +30,22 @@ export default function TrackServiceCard({
   const [statusLoading, setStatusLoading] = useState(true);
   const [previewAvailable, setPreviewAvailable] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(true);
+  const [branchName, setBranchName] = useState<string>(branch);
 
   useEffect(() => {
     let mounted = true;
     const fetchData = async () => {
       setStatusLoading(true);
       setPreviewLoading(true);
+      
+      try {
+        // Fetch branch name
+        const name = await getBranchName(branch);
+        if (mounted) setBranchName(name);
+      } catch (e) {
+        console.error('Failed to fetch branch name:', e);
+      }
+      
       try {
         const dates = await getDatesByLineItemId(trackNumber);
         if (mounted) setIsReady(dates?.current_status === 7);
@@ -58,7 +69,7 @@ export default function TrackServiceCard({
     return () => {
       mounted = false;
     };
-  }, [trackNumber]);
+  }, [trackNumber, branch]);
 
   const handlePress = () => {
     if (onPress) return onPress();
@@ -88,7 +99,7 @@ export default function TrackServiceCard({
     <Pressable style={styles.card} onPress={handlePress}>
       <View>
         <ThemedText type="subtitle1" style={styles.branch}>
-          {branch}
+          {branchName}
         </ThemedText>
         <ThemedText type="default">{services}</ThemedText>
         <ThemedText type="titleSmall" style={styles.model}>

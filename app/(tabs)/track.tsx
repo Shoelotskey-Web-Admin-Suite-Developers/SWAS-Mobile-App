@@ -70,15 +70,6 @@ export default function TrackServiceScreen() {
     });
   };
 
-  function toPascalCase(value?: string) {
-    if (!value) return '';
-    return value
-      .toLowerCase()
-      .split(/[\s_-]+/)
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
-  }
-
   return (
     <>
       <HeaderConfig title="Track Service" />
@@ -99,7 +90,7 @@ export default function TrackServiceScreen() {
             lineItems.map((item, index) => (
               <View key={item.line_item_id || index} style={{ marginBottom: 0 }}>
                 <TrackServiceCard
-                  branch={toPascalCase(item.branch_id)}
+                  branch={item.branch_id} // Pass the original branch_id, not the transformed version
                   services={(Array.isArray(item.services) ? item.services : [])
                     .map((s: ILineItemService) => `${serviceNames[s.service_id] || s.service_id} (${s.quantity})`)
                     .join(' + ')}

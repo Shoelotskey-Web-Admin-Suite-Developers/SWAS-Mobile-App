@@ -1,6 +1,7 @@
 import HeaderConfig from '@/components/HeaderConfig';
 import PreviewSlider from '@/components/PreviewSlider';
 import { ThemedText } from '@/components/ThemedText';
+import { useSocket } from '@/hooks/useSocket';
 import { getCustName } from '@/utils/api/getCustName';
 import { getDatesByLineItemId } from '@/utils/api/getDatesByLineItemId';
 import { getLineItemById } from '@/utils/api/getLineItemById';
@@ -8,12 +9,20 @@ import { getServiceName } from '@/utils/api/getServiceName';
 import { getTransactionsById } from '@/utils/api/getTransactionsById';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
 
 export default function TrackItemScreen() {
   const { receiptId, trackNumber, customerId } = useLocalSearchParams();
+  const {
+    joinLineItem,
+    leaveLineItem,
+    onDatesUpdated,
+    onLineItemUpdated,
+    offDatesUpdated,
+    offLineItemUpdated,
+  } = useSocket();
 
   const [lineItem, setLineItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -21,6 +30,63 @@ export default function TrackItemScreen() {
   const [serviceNames, setServiceNames] = useState<string[]>([]);
   const [transaction, setTransaction] = useState<any>(null);
   const [dates, setDates] = useState<any>(null);
+
+  // Memoized callback for dates updates
+  const handleDatesUpdate = useCallback((data: any) => {
+    console.log('📱 Received dates update:', data);
+    
+    // Check if this update is for our current line item
+    if (data.lineItemId === trackNumber || 
+        (lineItem && data.lineItemId === lineItem.line_item_id)) {
+      
+      // Update the dates state with the new data
+      if (data.fullDocument) {
+        setDates(data.fullDocument);
+        console.log('✅ Updated dates state from socket');
+      }
+    }
+  }, [trackNumber, lineItem]);
+
+  // Memoized callback for line item updates
+  const handleLineItemUpdate = useCallback((data: any) => {
+    console.log('📱 Received line item update:', data);
+    
+    // Check if this update is for our current line item
+    if (data.lineItemId === trackNumber || 
+        (lineItem && data.lineItemId === lineItem.line_item_id)) {
+      
+      // Update the line item state with the new data
+      if (data.fullDocument) {
+        setLineItem(data.fullDocument);
+        console.log('✅ Updated line item state from socket');
+      }
+    }
+  }, [trackNumber, lineItem]);
+
+  // Set up socket listeners
+  useEffect(() => {
+    onDatesUpdated(handleDatesUpdate);
+    onLineItemUpdated(handleLineItemUpdate);
+
+    return () => {
+      offDatesUpdated(handleDatesUpdate);
+      offLineItemUpdated(handleLineItemUpdate);
+    };
+  }, [handleDatesUpdate, handleLineItemUpdate, onDatesUpdated, onLineItemUpdated, offDatesUpdated, offLineItemUpdated]);
+
+  // Join/leave line item room when trackNumber or lineItem changes
+  useEffect(() => {
+    const itemId = trackNumber || lineItem?.line_item_id;
+    if (itemId) {
+      joinLineItem(itemId as string);
+      console.log(`🔗 Joined socket room for line item: ${itemId}`);
+      
+      return () => {
+        leaveLineItem(itemId as string);
+        console.log(`🔓 Left socket room for line item: ${itemId}`);
+      };
+    }
+  }, [trackNumber, lineItem?.line_item_id, joinLineItem, leaveLineItem]);
 
   useEffect(() => {
     const fetchLineItem = async () => {

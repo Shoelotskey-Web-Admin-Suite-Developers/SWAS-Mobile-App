@@ -187,9 +187,6 @@ export default function BookingScreen() {
       return;
     }
 
-    const newAppointment = { branch, date, time, status: "pending" as const };
-    setCurrentAppointment(newAppointment);
-
     try {
       await addAppointment({
         branch_id: branch,
@@ -197,6 +194,10 @@ export default function BookingScreen() {
         time_start: time.toTimeString().slice(0,5),
         time_end: new Date(time.getTime() + 30*60000).toTimeString().slice(0,5),
       });
+
+      // Only update UI after successful API response
+      const newAppointment = { branch, date, time, status: "pending" as const };
+      setCurrentAppointment(newAppointment);
 
       await fetchCurrentAppointment();
 
@@ -210,8 +211,25 @@ export default function BookingScreen() {
     }
   };
 
+  // Helper function to check if appointment date has passed
+  const isAppointmentInPast = (appointmentDate?: Date) => {
+    if (!appointmentDate) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    const apptDateOnly = new Date(appointmentDate);
+    apptDateOnly.setHours(0, 0, 0, 0);
+    
+    return apptDateOnly < today;
+  };
+
   const appointment = currentAppointment || defaultAppointment;
-  const isBookingDisabled = appointment.status === 'pending' || appointment.status === 'approved';
+  
+  // Only disable booking if there's a future/today appointment that's pending or approved
+  const isBookingDisabled = 
+    (appointment.status === 'pending' || appointment.status === 'approved') &&
+    !isAppointmentInPast(appointment.date);
 
   return (
     <>
@@ -251,7 +269,7 @@ export default function BookingScreen() {
 
         {isBookingDisabled && (
           <Text style={styles.disabledText}>
-            Cannot book a new appointment because you already have one {appointment.status} appointment.
+            Cannot book a new appointment because you already have an upcoming {appointment.status} appointment.
           </Text>
         )}
       </View>

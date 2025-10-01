@@ -13,10 +13,14 @@ export const addAppointment = async (req: Request, res: Response) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Check for existing pending appointments (any date)
-    const hasPending = await Appointment.findOne({ cust_id, status: "Pending" });
-    if (hasPending) {
-      return res.status(400).json({ error: "Customer already has a pending appointment" });
+    // Check for existing pending appointments from today onwards (not past appointments)
+    const hasPendingFuture = await Appointment.findOne({ 
+      cust_id, 
+      status: "Pending",
+      date_for_inquiry: { $gte: today }
+    });
+    if (hasPendingFuture) {
+      return res.status(400).json({ error: "Customer already has a pending appointment today or in the future" });
     }
 
     // Check for existing approved appointments from today onwards
@@ -28,6 +32,36 @@ export const addAppointment = async (req: Request, res: Response) => {
     if (hasApprovedFuture) {
       return res.status(400).json({ error: "Customer already has an approved appointment today or in the future" });
     }
+
+    // Check if timeslot is already full (max 3 appointments per branch/day/timeslot)
+    // Normalize the date to ensure consistent comparison (start of day)
+    const targetDate = new Date(date_for_inquiry);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    const nextDay = new Date(targetDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    const existingAppointments = await Appointment.countDocuments({
+      branch_id,
+      date_for_inquiry: { 
+        $gte: targetDate, 
+        $lt: nextDay 
+      },
+      time_start,
+      status: { $in: ["Pending", "Approved"] } // Count both pending and approved
+    });
+
+    console.log(`🔍 Timeslot check: branch=${branch_id}, date=${targetDate.toISOString().split('T')[0]}, time=${time_start}, existing=${existingAppointments}/3`);
+
+    if (existingAppointments >= 3) {
+      console.log(`❌ TIMESLOT FULL: Rejecting appointment for ${branch_id} on ${targetDate.toISOString().split('T')[0]} at ${time_start}`);
+      return res.status(400).json({ 
+        error: "This timeslot is already full. Please choose a different time or date." 
+      });
+    }
+
+    console.log(`✅ TIMESLOT AVAILABLE: Proceeding with appointment creation`);
+    
 
     // Auto-generate appointment_id
     const lastAppointment = await Appointment.findOne({}).sort({ _id: -1 }); // get last inserted
@@ -81,16 +115,19 @@ export const deletePendingByCustomer = async (req: Request, res: Response) => {
   try {
     const { cust_id } = req.params;
 
-    // Only delete Pending appointments
-    const deleted = await Appointment.deleteMany({ cust_id, status: "Pending" });
+    // Allow cancellation of both Pending and Approved appointments
+    const deleted = await Appointment.deleteMany({ 
+      cust_id, 
+      status: { $in: ["Pending", "Approved"] } 
+    });
 
     if (deleted.deletedCount === 0) {
-      return res.status(404).json({ error: "No pending appointment found to delete" });
+      return res.status(404).json({ error: "No appointment found to cancel" });
     }
 
-    res.status(200).json({ message: "Pending appointment(s) deleted successfully" });
+    res.status(200).json({ message: "Appointment(s) cancelled successfully" });
   } catch (error) {
-    console.error("Error deleting appointment:", error);
-    res.status(500).json({ error: "Failed to delete appointment" });
+    console.error("Error cancelling appointment:", error);
+    res.status(500).json({ error: "Failed to cancel appointment" });
   }
 };

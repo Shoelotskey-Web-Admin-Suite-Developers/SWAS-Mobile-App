@@ -143,6 +143,20 @@ export default function AppointmentCard({
     !toDate(appointment.time) &&
     (appointment.status || '').toLowerCase() === 'none';
 
+  // Check if appointment date has passed
+  const isAppointmentPast = () => {
+    const appointmentDate = toDate(appointment.date);
+    if (!appointmentDate) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+    
+    const appointmentDateOnly = new Date(appointmentDate);
+    appointmentDateOnly.setHours(0, 0, 0, 0);
+    
+    return appointmentDateOnly < today;
+  };
+
   const handleConfirmCancel = async () => {
     setShowConfirmCancel(false);
     setLoading(true);
@@ -169,6 +183,15 @@ export default function AppointmentCard({
     ? `${branchInfo.branch_name} — ${branchInfo.location}`
     : appointment.branch || 'No branch selected';
   const statusNormalized = (appointment.status || '').toString().toLowerCase();
+  
+  // Don't show pending or approved appointments if the date has passed
+  if (isAppointmentPast() && (statusNormalized === 'pending' || statusNormalized === 'approved')) {
+    return (
+      <View style={[styles.card, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#888', fontStyle: 'italic' }}>No upcoming appointment</Text>
+      </View>
+    );
+  }
   const statusLabel = statusNormalized
     ? statusNormalized.charAt(0).toUpperCase() + statusNormalized.slice(1)
     : 'None';
@@ -189,7 +212,7 @@ export default function AppointmentCard({
       <Text style={styles.detail}>📅  {formatDate(appointment.date)}</Text>
       <Text style={styles.detail}>🕒  {formatTimeRange(appointment.time)}</Text>
 
-      {statusNormalized === 'pending' && (
+      {(statusNormalized === 'pending' || statusNormalized === 'approved') && (
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={[styles.cancelButton, loading && { opacity: 0.7 }]}
@@ -208,7 +231,7 @@ export default function AppointmentCard({
       <ConfirmModal
         visible={showConfirmCancel}
         title="Cancel Appointment"
-        message="Are you sure you want to cancel this pending appointment?"
+        message="Are you sure you want to cancel this appointment?"
         confirmLabel="Yes, Cancel"
         cancelLabel="No"
         onConfirm={handleConfirmCancel}

@@ -23,7 +23,10 @@ export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    registerPushToken();
+    (async () => {
+      const result = await registerPushToken();
+      console.log('registerPushToken result:', result);
+    })();
   }, []);
 
   // Rotate the announcement every 30 seconds

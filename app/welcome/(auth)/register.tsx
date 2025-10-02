@@ -5,14 +5,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Dimensions,
-  ImageBackground,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View
+    Dimensions,
+    ImageBackground,
+    Platform,
+    Pressable,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -42,6 +42,12 @@ export default function RegisterScreen() {
       setShowError(true);
       return;
     }
+    // Address is required
+    if (!address || !address.trim()) {
+      setErrorMessage('Please provide your address.');
+      setShowError(true);
+      return;
+    }
     // Require at least one contact method: email or phone number
     const emailTrim = (email || '').trim();
     const phoneTrim = (phoneNumber || '').trim();
@@ -68,7 +74,7 @@ export default function RegisterScreen() {
         body: JSON.stringify({
           cust_name: `${firstName.trim()} ${lastName.trim()}`,
           cust_bdate: birthday.toISOString(),
-          cust_address: address || undefined,
+          cust_address: address.trim(),
           cust_contact: phoneTrim || undefined,
           cust_email: emailTrim || undefined,
         }),

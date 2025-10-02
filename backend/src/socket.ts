@@ -23,34 +23,77 @@ export function initSocket(io: Server, db: mongoose.Connection) {
     });
   });
 
+  // Helper: watch a collection and restart on error/close with exponential backoff
+  const watchCollectionWithRestart = (collectionName: string, onChange: (change: any) => void) => {
+    let closed = false;
+    let watchHandle: any = null;
+    let attempt = 0;
+
+    const start = () => {
+      if (closed) return;
+      try {
+        const coll = db.collection(collectionName);
+        watchHandle = coll.watch([], { fullDocument: 'updateLookup' });
+        console.log(`🔍 Watching collection ${collectionName}`);
+
+        watchHandle.on('change', (change: any) => {
+          attempt = 0;
+          try { onChange(change); } catch (e) { console.error('watch onChange handler failed', e); }
+        });
+
+        watchHandle.on('error', (err: any) => {
+          console.warn(`⚠️ Change stream error on ${collectionName}:`, err);
+          try { watchHandle.close(); } catch (e) {}
+          watchHandle = null;
+          scheduleRestart();
+        });
+
+        watchHandle.on('close', () => {
+          console.warn(`⚠️ Change stream closed for ${collectionName}`);
+          watchHandle = null;
+          scheduleRestart();
+        });
+      } catch (err) {
+        console.warn(`⚠️ Unable to start watcher for ${collectionName}:`, err);
+        scheduleRestart();
+      }
+    };
+
+    const scheduleRestart = () => {
+      if (closed) return;
+      attempt = Math.min(10, attempt + 1);
+      const delay = Math.min(30_000, 500 * Math.pow(2, attempt));
+      console.log(`⏳ Scheduling restart of ${collectionName} watcher in ${delay}ms (attempt ${attempt})`);
+      setTimeout(() => start(), delay);
+    };
+
+    start();
+
+    return {
+      close: () => {
+        closed = true;
+        try { watchHandle?.close(); } catch (e) {}
+      }
+    };
+  };
+
   // Setup MongoDB Change Stream for `appointments`
-  const appointmentsCollection = db.collection("appointments");
-  appointmentsCollection.watch([], { fullDocument: "updateLookup" }).on("change", (change) => {
-    console.log("📢 Appointment change received:", change);
-    io.emit("appointmentUpdated", change);
+  watchCollectionWithRestart('appointments', (change) => {
+    console.log('📢 Appointment change received:', change);
+    io.emit('appointmentUpdated', change);
   });
 
-  // Watch announcements collection and broadcast changes
-  try {
-    const announcementsCollection = db.collection("announcements");
-    announcementsCollection.watch([], { fullDocument: "updateLookup" }).on("change", (change) => {
-      console.log("📢 Announcement change received:", change);
-      io.emit("announcementsUpdated", change);
-    });
-  } catch (err) {
-    console.warn("⚠️ Unable to watch announcements collection for changes:", err);
-  }
+  // Watch announcements collection and broadcast changes (resilient)
+  watchCollectionWithRestart('announcements', (change) => {
+    console.log('📢 Announcement change received:', change);
+    io.emit('announcementsUpdated', change);
+  });
 
-  // Watch promos collection and broadcast changes
-  try {
-    const promosCollection = db.collection("promos");
-    promosCollection.watch([], { fullDocument: "updateLookup" }).on("change", (change) => {
-      console.log("📢 Promo change received:", change);
-      io.emit("promosUpdated", change);
-    });
-  } catch (err) {
-    console.warn("⚠️ Unable to watch promos collection for changes:", err);
-  }
+  // Watch promos collection and broadcast changes (resilient)
+  watchCollectionWithRestart('promos', (change) => {
+    console.log('📢 Promo change received:', change);
+    io.emit('promosUpdated', change);
+  });
 
   // Watch dates collection for real-time updates
   try {

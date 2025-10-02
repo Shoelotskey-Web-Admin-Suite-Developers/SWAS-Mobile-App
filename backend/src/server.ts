@@ -55,10 +55,7 @@ app.use("/api/dates", datesRoutes);
 // ✅ Connect to MongoDB and initialize sockets
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/swas";
 mongoose
-  .connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected");
     initSocket(io, mongoose.connection); // pass both Socket.IO and DB connection

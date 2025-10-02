@@ -16,8 +16,8 @@ const CustomerSchema: Schema<ICustomer> = new Schema<ICustomer>(
   {
     cust_id: { type: String, required: true, unique: true },
     cust_name: { type: String, required: true },
-    cust_bdate: { type: Date, default: null },
-    cust_address: { type: String, default: null },
+  cust_bdate: { type: Date, default: null },
+  cust_address: { type: String, required: true },
     cust_email: { type: String, default: null },
     cust_contact: { type: String, default: null },
     total_services: { type: Number, default: 0 },

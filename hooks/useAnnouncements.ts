@@ -32,15 +32,46 @@ const MOCK_ANNOUNCEMENTS: Announcement[] = [
   // Add more
 ];
 
+// Module-level cache + subscribers so multiple hook instances stay in sync
+let _announcementsCache: Announcement[] = [];
+let _readIdsCache: string[] = [];
+
+type Subscriber = () => void;
+const _subscribers = new Set<Subscriber>();
+
+function notifyAll() {
+  _subscribers.forEach((cb) => {
+    try {
+      cb();
+    } catch (e) {
+      console.warn('useAnnouncements subscriber error', e);
+    }
+  });
+}
+
 export function useAnnouncements() {
-  const [readIds, setReadIds] = useState<string[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [readIds, setReadIds] = useState<string[]>(_readIdsCache);
+  const [announcements, setAnnouncements] = useState<Announcement[]>(_announcementsCache);
   const [loading, setLoading] = useState<boolean>(true);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [unreadCount, setUnreadCount] = useState<number>(() => announcements.filter(a => !_readIdsCache.includes(a.id)).length);
 
   useEffect(() => {
+    // Initialize from cache and then load fresh values
+    setAnnouncements(_announcementsCache);
+    setReadIds(_readIdsCache);
+    setUnreadCount((_announcementsCache || []).filter(a => !_readIdsCache.includes(a.id)).length);
     loadAnnouncements();
     loadReadIds();
+
+    const subscriber: Subscriber = () => {
+      setAnnouncements(_announcementsCache);
+      setReadIds(_readIdsCache);
+      setUnreadCount((_announcementsCache || []).filter(a => !_readIdsCache.includes(a.id)).length);
+    };
+    _subscribers.add(subscriber);
+    return () => {
+      _subscribers.delete(subscriber);
+    };
   }, []);
 
   // Setup socket listener to refresh announcements in real-time
@@ -58,7 +89,7 @@ export function useAnnouncements() {
 
       socket.on('announcementsUpdated', (change: any) => {
         console.log('📣 announcementsUpdated', change);
-        // Simply reload announcements; the hook will update state and unread count
+        // Reload announcements and update module cache so all hook instances update
         loadAnnouncements();
       });
 
@@ -80,11 +111,16 @@ export function useAnnouncements() {
   const loadAnnouncements = async () => {
     try {
       const result = await getAnnouncements();
-      if (result && result.length) setAnnouncements(result);
-      else setAnnouncements(MOCK_ANNOUNCEMENTS);
+      const payload = result && result.length ? result : MOCK_ANNOUNCEMENTS;
+      _announcementsCache = payload;
+      setAnnouncements(payload);
+      // notify other hook instances
+      notifyAll();
     } catch (err) {
       console.warn('useAnnouncements: failed to load from API, using mock data', err);
+      _announcementsCache = MOCK_ANNOUNCEMENTS;
       setAnnouncements(MOCK_ANNOUNCEMENTS);
+      notifyAll();
     } finally {
       setLoading(false);
     }
@@ -131,24 +167,27 @@ export function useAnnouncements() {
     const key = userId ? `${STORAGE_KEY_BASE}_${userId}` : STORAGE_KEY_BASE;
     const json = await AsyncStorage.getItem(key);
     const parsed: string[] = json ? JSON.parse(json) : [];
+    _readIdsCache = parsed;
     setReadIds(parsed);
-    // compute unread based on persisted ids
-    setUnreadCount(announcements.filter(a => !parsed.includes(a.id)).length);
+    // compute unread based on persisted ids using the cached announcements
+    setUnreadCount((_announcementsCache || []).filter(a => !parsed.includes(a.id)).length);
+    notifyAll();
   };
 
   const markAsRead = async (id: string) => {
-    if (readIds.includes(id)) return;
-    const newReadIds = [...readIds, id];
+    if ((_readIdsCache || []).includes(id)) return;
+    const newReadIds = [..._readIdsCache, id];
+    _readIdsCache = newReadIds;
     setReadIds(newReadIds);
     const userId = await getUserId();
     const key = userId ? `${STORAGE_KEY_BASE}_${userId}` : STORAGE_KEY_BASE;
     await AsyncStorage.setItem(key, JSON.stringify(newReadIds));
-    // update unread count after marking
-    setUnreadCount(announcements.filter(a => !newReadIds.includes(a.id)).length);
+    // update unread count using cached announcements and notify other listeners
+    setUnreadCount((_announcementsCache || []).filter(a => !newReadIds.includes(a.id)).length);
+    notifyAll();
   };
 
-  // keep unreadCount in sync when announcements change (e.g., fresh fetch)
-  // this handles the case where announcements load after readIds
+  // keep unreadCount in sync when announcements or readIds change
   useEffect(() => {
     setUnreadCount(announcements.filter(a => !readIds.includes(a.id)).length);
   }, [announcements, readIds]);

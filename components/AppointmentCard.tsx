@@ -1,13 +1,14 @@
 import ConfirmModal from '@/components/ConfirmModal';
 import { deletePendingAppointment } from '@/utils/api/deleteAppointment';
+import { deleteAppointmentById } from '@/utils/api/deleteAppointmentById';
 import { getBranches } from '@/utils/api/getBranches';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 type AppointmentStatus =
@@ -17,6 +18,7 @@ type AppointmentStatus =
   | 'none';
 
 type Appointment = {
+  appointment_id?: string;
   branch?: string; // branch_id
   date?: Date | string | null;
   time?: Date | string | null;
@@ -34,10 +36,10 @@ let _branchesCache: Branch[] | null = null;
 
 export default function AppointmentCard({
   appointment,
-  onCancelled,
+  onCanceled,
 }: {
   appointment: Appointment;
-  onCancelled?: () => void;
+  onCanceled?: () => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [branches, setBranches] = useState<Branch[] | null>(_branchesCache);
@@ -103,7 +105,6 @@ export default function AppointmentCard({
       case 'confirmed':
         return '#c3fb88ff';
       case 'canceled':
-      case 'cancled':
         return '#E0E0E0';
       default:
         return '#E0E0E0';
@@ -161,9 +162,15 @@ export default function AppointmentCard({
     setShowConfirmCancel(false);
     setLoading(true);
     try {
-      await deletePendingAppointment();
+      if (appointment.appointment_id) {
+        // Hard delete the specific appointment (revert from previous soft-cancel behavior)
+        await deleteAppointmentById(appointment.appointment_id);
+      } else {
+        // Fallback if ID missing – legacy bulk delete
+        await deletePendingAppointment();
+      }
       if (!isMounted.current) return;
-      if (onCancelled) onCancelled();
+  if (onCanceled) onCanceled();
     } catch (err: any) {
       console.error(err?.message || 'Failed to cancel appointment');
     } finally {

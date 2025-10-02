@@ -14,6 +14,10 @@ export const createCustomer = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Name and birthdate are required" });
     }
 
+    if (!cust_address || !cust_address.toString().trim()) {
+      return res.status(400).json({ error: "Address is required" });
+    }
+
     // ✅ Check if a customer with the same name and birthdate already exists
     const existingCustomer = await Customer.findOne({
       cust_name: cust_name.trim(),
@@ -28,20 +32,23 @@ export const createCustomer = async (req: Request, res: Response) => {
 
     // Note: we no longer enforce email uniqueness. Multiple customers may share the same email.
 
-    // Generate cust_id
-    const prefix = "CUST-00-";
-    const lastCustomer = await Customer.findOne({ cust_id: { $regex: `^${prefix}` } }).sort({ cust_id: -1 });
-    let nextNumber = "1";
-    if (lastCustomer) {
-      const lastNum = parseInt(lastCustomer.cust_id.split("-")[2]);
-      nextNumber = String(lastNum + 1);
+    // Generate cust_id with simple fixed prefix (no regex / legacy scan): CUST-0-<n>
+    const prefix = "CUST-0-";
+    const allIds = await Customer.find({}, { cust_id: 1, _id: 0 }).lean();
+    let maxSeq = 0;
+    for (const rec of allIds) {
+      if (rec.cust_id && rec.cust_id.startsWith(prefix)) {
+        const n = parseInt(rec.cust_id.slice(prefix.length), 10);
+        if (!isNaN(n) && n > maxSeq) maxSeq = n;
+      }
     }
+    const nextNumber = String(maxSeq + 1);
 
     const customer = new Customer({
       cust_id: prefix + nextNumber,
       cust_name: cust_name.trim(),
       cust_bdate: cust_bdate,
-      cust_address: cust_address || null,
+      cust_address: cust_address,
       cust_contact: cust_contact || null,
       cust_email: cust_email || null,
       total_services: 0,

@@ -15,15 +15,32 @@ export type Promo = {
 const MOCK_PROMOS: Promo[] = [];
 const STORAGE_KEY_BASE = 'READ_PROMOS';
 
+// Module-level cache so multiple hook instances stay in sync
+let _promosCache: Promo[] = [];
+let _promosReadCache: string[] = [];
+type Subscriber = () => void;
+const _subscribers = new Set<Subscriber>();
+
 export function usePromos() {
-  const [promos, setPromos] = useState<Promo[]>([]);
+  const [promos, setPromos] = useState<Promo[]>(_promosCache);
   const [loading, setLoading] = useState<boolean>(true);
-  const [readIds, setReadIds] = useState<string[]>([]);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [readIds, setReadIds] = useState<string[]>(_promosReadCache);
+  const [unreadCount, setUnreadCount] = useState<number>(() => _promosCache.filter(p => !_promosReadCache.includes(p.id)).length);
 
   useEffect(() => {
+    setPromos(_promosCache);
+    setReadIds(_promosReadCache);
+    setUnreadCount(_promosCache.filter(p => !_promosReadCache.includes(p.id)).length);
     loadPromos();
     loadReadIds();
+
+    const sub: Subscriber = () => {
+      setPromos(_promosCache);
+      setReadIds(_promosReadCache);
+      setUnreadCount(_promosCache.filter(p => !_promosReadCache.includes(p.id)).length);
+    };
+    _subscribers.add(sub);
+    return () => { _subscribers.delete(sub); };
   }, []);
 
   // realtime updates via socket
@@ -54,18 +71,24 @@ export function usePromos() {
     const key = userId ? `${STORAGE_KEY_BASE}_${userId}` : STORAGE_KEY_BASE;
     const json = await AsyncStorage.getItem(key);
     const parsed: string[] = json ? JSON.parse(json) : [];
+    _promosReadCache = parsed;
     setReadIds(parsed);
-    setUnreadCount(promos.filter(p => !parsed.includes(p.id)).length);
+    setUnreadCount((_promosCache || []).filter(p => !parsed.includes(p.id)).length);
+    _subscribers.forEach(cb => cb());
   };
 
   const loadPromos = async () => {
     try {
       const res = await getPromos();
-      if (res) setPromos(res.length ? res : MOCK_PROMOS);
-      else setPromos(MOCK_PROMOS);
+      const payload = res && res.length ? res : MOCK_PROMOS;
+      _promosCache = payload;
+      setPromos(payload);
+      _subscribers.forEach(cb => cb());
     } catch (err) {
       console.warn('usePromos failed', err);
+      _promosCache = MOCK_PROMOS;
       setPromos(MOCK_PROMOS);
+      _subscribers.forEach(cb => cb());
     } finally {
       setLoading(false);
     }
@@ -108,12 +131,14 @@ export function usePromos() {
 
   const markAsRead = async (id: string) => {
     if (readIds.includes(id)) return;
-    const newRead = [...readIds, id];
+    const newRead = [..._promosReadCache, id];
+    _promosReadCache = newRead;
     setReadIds(newRead);
     const userId = await getUserId();
     const key = userId ? `${STORAGE_KEY_BASE}_${userId}` : STORAGE_KEY_BASE;
     await AsyncStorage.setItem(key, JSON.stringify(newRead));
-    setUnreadCount(promos.filter(p => !newRead.includes(p.id)).length);
+    setUnreadCount((_promosCache || []).filter(p => !newRead.includes(p.id)).length);
+    _subscribers.forEach(cb => cb());
   };
 
   useEffect(() => {

@@ -20,8 +20,8 @@
       "package": "com.swas_mobile_app.SWASMobileApp",
       "googleServicesFile": "./google-services.json",
       "notification": {
-        "icon": "./assets/images/adaptive-icon.png",
-        "color": "#ffffff" 
+        "icon": "./assets/images/notification-icon.png",
+        "color": "#CE1616" 
       }
     },
     "web": {
@@ -35,7 +35,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/SWAS-Mobile-Logo-Black.png",
-          "imageWidth": 200,
+          "imageWidth": 150,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }

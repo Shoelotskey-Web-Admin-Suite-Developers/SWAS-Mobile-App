@@ -38,9 +38,6 @@ yarn-error.*
 
 app-example
 
-# Firebase config
-google-services.json
-
 # Environment files
 .env
 .env.local

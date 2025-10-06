@@ -8,11 +8,12 @@ export const getLineItems = async () => {
     if (!cust_id) throw new Error("Customer ID not found in session storage");
 
     const url = `${API_BASE_URL}/api/line-items/customer/${cust_id}`;
+    console.log(`getLineItems: fetching line-items for cust_id=${cust_id} url=${url}`);
     const res = await fetch(url, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
-
+    console.log(`getLineItems: response status=${res.status}`);
     const text = await res.text();
 
     let data: any;

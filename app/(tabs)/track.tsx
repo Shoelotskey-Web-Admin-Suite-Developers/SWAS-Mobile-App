@@ -163,12 +163,24 @@ export default function TrackServiceScreen() {
   useEffect(() => {
     const fetchLineItems = async () => {
       setLoading(true);
+
+     // Read the current user id first to avoid race conditions
+     const currentUserId = await (await import('@/utils/session')).getUserId();
+     console.log('[Track] currentUserId for fetch:', currentUserId);
+
       const data = await getLineItems();
-      setLineItems(data || []);
+      // Defensive filtering: if backend returned items for a different user,
+      // filter them out and log the discrepancy for debugging.
+      const items = Array.isArray(data) ? data : [];
+      const filtered = currentUserId ? items.filter((it: any) => it.cust_id === currentUserId) : items;
+      if (items.length !== filtered.length) {
+        console.warn(`[Track] getLineItems returned ${items.length} items but ${filtered.length} match the current user (${currentUserId}). Showing filtered list.`);
+      }
+      setLineItems(filtered);
 
       // Gather all unique service_ids
       const allServiceIds = new Set<string>();
-      (data || []).forEach((item: any) => {
+      (filtered || []).forEach((item: any) => {
         (item.services || []).forEach((s: ILineItemService) => {
           allServiceIds.add(s.service_id);
         });

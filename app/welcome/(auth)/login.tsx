@@ -2,15 +2,12 @@ import ErrorModal from '@/components/ErrorSignUpModal'; // ✅ import modal
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { saveUserId, saveUserToken } from "@/utils/session";
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Dimensions,
   Image,
   ImageBackground,
-  Platform,
-  Pressable,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -23,23 +20,15 @@ const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/,
 export default function LoginScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [birthday, setBirthday] = useState<Date | undefined>();
-  const [showPicker, setShowPicker] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   // 🔴 Error modal state
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return '';
-    return `${date.getDate().toString().padStart(2, '0')}-${(date.getMonth() + 1)
-      .toString()
-      .padStart(2, '0')}-${date.getFullYear()}`;
-  };
-
   const handleLogin = async () => {
-    if (!firstName || !lastName || !birthday) {
-      setErrorMessage("⚠️ Please fill in all required fields");
+    if (!firstName || !lastName || !phoneNumber) {
+      setErrorMessage("⚠️ Please fill in First name, Last name, and Contact number");
       setShowError(true);
       return;
     }
@@ -51,7 +40,7 @@ export default function LoginScreen() {
         body: JSON.stringify({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
-          cust_bdate: birthday.toISOString(),
+          contact: phoneNumber.trim(),
         }),
       });
 
@@ -112,29 +101,15 @@ export default function LoginScreen() {
             />
           </ThemedView>
 
-          <ThemedText type="titleSmall" style={styles.label}>Birthdate*</ThemedText>
-          <Pressable onPress={() => setShowPicker(true)}>
-            <TextInput
-              style={styles.input}
-              placeholder="DD-MM-YYYY"
-              value={formatDate(birthday)}
-              editable={false}
-              pointerEvents="none"
-            />
-          </Pressable>
-
-          {showPicker && (
-            <DateTimePicker
-              value={birthday || new Date()}
-              mode="date"
-              display={Platform.OS === 'android' ? 'spinner' : 'calendar'}
-              onChange={(event, selectedDate) => {
-                setShowPicker(false);
-                if (selectedDate) setBirthday(selectedDate);
-              }}
-              maximumDate={new Date()}
-            />
-          )}
+          <ThemedText type="titleSmall" style={styles.label}>Contact Number*</ThemedText>
+          <TextInput
+            style={styles.input}
+            placeholder="0000-000-0000"
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+          />
 
           <View style={styles.footer}>
             <TouchableOpacity style={styles.button} onPress={handleLogin}>

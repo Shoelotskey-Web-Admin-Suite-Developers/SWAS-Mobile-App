@@ -5,14 +5,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Dimensions,
-    ImageBackground,
-    Platform,
-    Pressable,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View
+  Dimensions,
+  ImageBackground,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -21,7 +21,7 @@ const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || '').replace(/\/$/,
 export default function RegisterScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [birthday, setBirthday] = useState<Date | undefined>();
+  const [birthday, setBirthday] = useState<Date | undefined>(); // optional
   const [showPicker, setShowPicker] = useState(false);
   const [address, setAddress] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -37,27 +37,26 @@ export default function RegisterScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!firstName || !lastName || !birthday) {
-      setErrorMessage('Please fill in all required fields.');
+    // Required: first name, last name, address, contact number
+    if (!firstName || !lastName) {
+      setErrorMessage('Please provide your first and last name.');
       setShowError(true);
       return;
     }
-    // Address is required
     if (!address || !address.trim()) {
       setErrorMessage('Please provide your address.');
       setShowError(true);
       return;
     }
-    // Require at least one contact method: email or phone number
-    const emailTrim = (email || '').trim();
-    const phoneTrim = (phoneNumber || '').trim();
-    if (!emailTrim && !phoneTrim) {
-      setErrorMessage('Please provide at least one contact: email or phone number.');
+    if (!phoneNumber || !phoneNumber.trim()) {
+      setErrorMessage('Please provide your contact number.');
       setShowError(true);
       return;
     }
 
-    // If email provided, perform a basic email format validation
+    // Optional: email and birthday. If email provided, validate format.
+    const emailTrim = (email || '').trim();
+    const phoneTrim = (phoneNumber || '').trim();
     if (emailTrim) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(emailTrim)) {
@@ -73,9 +72,9 @@ export default function RegisterScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cust_name: `${firstName.trim()} ${lastName.trim()}`,
-          cust_bdate: birthday.toISOString(),
+          cust_bdate: birthday ? birthday.toISOString() : undefined,
           cust_address: address.trim(),
-          cust_contact: phoneTrim || undefined,
+          cust_contact: phoneTrim,
           cust_email: emailTrim || undefined,
         }),
       });
@@ -127,7 +126,7 @@ export default function RegisterScreen() {
             />
           </ThemedView>
 
-          <ThemedText type="titleSmall" style={styles.label}>Birthdate*</ThemedText>
+          <ThemedText type="titleSmall" style={styles.label}>Birthdate (optional)</ThemedText>
           <Pressable onPress={() => setShowPicker(true)}>
             <TextInput
               style={styles.input}
@@ -151,7 +150,7 @@ export default function RegisterScreen() {
             />
           )}
 
-          <ThemedText type="titleSmall" style={styles.label}>Address</ThemedText>
+          <ThemedText type="titleSmall" style={styles.label}>Address*</ThemedText>
           <TextInput
             style={styles.input}
             placeholder="Brgy/Village - City - Province"
@@ -160,7 +159,7 @@ export default function RegisterScreen() {
             onChangeText={setAddress}
           />
 
-          <ThemedText type="titleSmall" style={styles.label}>Phone Number</ThemedText>
+          <ThemedText type="titleSmall" style={styles.label}>Contact Number*</ThemedText>
           <TextInput
             style={styles.input}
             placeholder="0000-000-0000"

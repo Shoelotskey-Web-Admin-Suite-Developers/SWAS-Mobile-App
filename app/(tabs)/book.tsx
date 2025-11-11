@@ -13,6 +13,7 @@ import { addAppointment } from '@/utils/api/addAppointment';
 import { checkCanceledSlot } from '@/utils/api/checkCanceledSlot';
 import { getAppointment } from '@/utils/api/getAppointment';
 import { getBranches } from '@/utils/api/getBranches';
+import { getCustomerCredibility } from '@/utils/api/getCustomerCredibility';
 import { getUserId } from '@/utils/session';
 
 const defaultAppointment = {
@@ -40,6 +41,10 @@ export default function BookingScreen() {
   // Error modal state
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Credibility state
+  const [credibility, setCredibility] = useState<number | null>(null);
+  const [showCredibilityWarning, setShowCredibilityWarning] = useState(false);
 
   // 🔹 Hook for real-time updates
   // 🔹 Hook for real-time updates
@@ -79,7 +84,22 @@ export default function BookingScreen() {
       }
     };
 
+    const fetchCredibility = async () => {
+      try {
+        const cred = await getCustomerCredibility();
+        setCredibility(cred);
+        
+        // Show warning if credibility is between 76-80
+        if (cred !== null && cred > 75 && cred <= 80) {
+          setShowCredibilityWarning(true);
+        }
+      } catch (err) {
+        console.error("Failed to fetch credibility:", err);
+      }
+    };
+
     fetchBranches();
+    fetchCredibility();
   }, []);
 
   const safeParseDateTime = (dateInput: any, timeInput?: string) => {
@@ -203,6 +223,13 @@ export default function BookingScreen() {
   }, [changes]);
 
   const handleBookAppointment = async () => {
+    // Check credibility first
+    if (credibility !== null && credibility <= 75) {
+      setErrorMessage("Your credibility score is too low to book an appointment. Please contact customer service for assistance.");
+      setShowError(true);
+      return;
+    }
+
     if (!branch || !date || !time) {
       setErrorMessage("Please complete all required fields.");
       setShowError(true);
@@ -294,15 +321,35 @@ export default function BookingScreen() {
   const appointment = currentAppointment || defaultAppointment;
   
   // Only disable booking if there's a future/today appointment that's pending or approved
+  // OR if credibility is 75 or below
   const isBookingDisabled = 
-    (appointment.status === 'pending' || appointment.status === 'approved') &&
-    !isAppointmentInPast(appointment.date);
+    ((appointment.status === 'pending' || appointment.status === 'approved') &&
+    !isAppointmentInPast(appointment.date)) ||
+    (credibility !== null && credibility <= 75);
 
   return (
     <>
       <HeaderConfig title="Booking" />
       <View style={styles.container}>
   <AppointmentCard appointment={appointment} onCanceled={fetchCurrentAppointment} />
+
+        {showCredibilityWarning && (
+          <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>⚠️ Credibility Warning</Text>
+            <Text style={styles.warningText}>
+              Your current credibility score is {credibility}. One more missed appointment will result in booking restrictions.
+            </Text>
+          </View>
+        )}
+
+        {credibility !== null && credibility <= 75 && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorTitle}>❌ Booking Restricted</Text>
+            <Text style={styles.errorText}>
+              Your credibility score is {credibility}. You cannot book appointments at this time. Please contact customer service.
+            </Text>
+          </View>
+        )}
 
         <Text style={styles.label}>Select Branch*</Text>
         <View style={styles.selectWrapper}>
@@ -334,11 +381,15 @@ export default function BookingScreen() {
           <Text style={styles.buttonText}>Book Appointment</Text>
         </TouchableOpacity>
 
-        {isBookingDisabled && (
+        {isBookingDisabled && credibility !== null && credibility <= 75 ? (
+          <Text style={styles.disabledText}>
+            Booking is disabled due to low credibility score. Please contact customer service.
+          </Text>
+        ) : isBookingDisabled ? (
           <Text style={styles.disabledText}>
             Cannot book a new appointment because you already have an upcoming {appointment.status} appointment.
           </Text>
-        )}
+        ) : null}
       </View>
 
       <ErrorModal
@@ -393,5 +444,43 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 6,
     backgroundColor: 'white',
+  },
+  warningBox: {
+    backgroundColor: '#FFF3CD',
+    borderColor: '#FFC107',
+    borderWidth: 2,
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 12,
+  },
+  warningTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
+  },
+  errorBox: {
+    backgroundColor: '#F8D7DA',
+    borderColor: '#F5C6CB',
+    borderWidth: 2,
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 12,
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#721C24',
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#721C24',
+    lineHeight: 20,
   },
 });

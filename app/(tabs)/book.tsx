@@ -5,8 +5,9 @@ import HeaderConfig from '@/components/HeaderConfig';
 import TimeInput from '@/components/TimeInput';
 import { getUnavailability } from '@/utils/api/getUnavailability';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 import DropDownPicker, { ItemType } from 'react-native-dropdown-picker';
+import { FontAwesome } from '@expo/vector-icons';
 
 import { useAppointmentUpdates } from '@/hooks/useAppointmentUpdates';
 import { addAppointment } from '@/utils/api/addAppointment';
@@ -22,11 +23,13 @@ const defaultAppointment = {
   date: undefined,
   time: undefined,
   status: 'none',
+  reference_no: undefined as string | undefined,
 };
 
 export default function BookingScreen() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<ItemType<string>[]>([]);
+  const [branchData, setBranchData] = useState<any[]>([]);
   const [branch, setBranch] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState<Date | undefined>();
@@ -36,6 +39,7 @@ export default function BookingScreen() {
     date: Date;
     time: Date;
     status: 'none' | 'pending' | 'approved' | 'canceled';
+    reference_no?: string;
   } | null>(null);
 
   // Error modal state
@@ -79,6 +83,7 @@ export default function BookingScreen() {
           value: b.branch_id,
         }));
         setItems(options);
+        setBranchData(branches);
       } catch (err) {
         console.error("Failed to fetch branches:", err);
       }
@@ -136,6 +141,7 @@ export default function BookingScreen() {
                 date: dateVal,
                 time: timeVal,
                 status: (appointment.status || 'pending').toLowerCase() as any,
+                reference_no: appointment.reference_no,
               }
             : null
         );
@@ -215,6 +221,7 @@ export default function BookingScreen() {
         date: isNaN(newDate.getTime()) ? (currentAppointmentRef.current?.date as any) : newDate,
         time: isNaN(newTime.getTime()) ? (currentAppointmentRef.current?.time as any) : newTime,
         status: (normalizedStatus as any) || (currentAppointmentRef.current?.status as any) || 'pending',
+        reference_no: appt.reference_no || currentAppointmentRef.current?.reference_no,
       };
       // Update both state and ref synchronously to avoid triggering the effect again from state change
       currentAppointmentRef.current = newState as any;
@@ -290,7 +297,7 @@ export default function BookingScreen() {
       });
 
       // Only update UI after successful API response
-  const newAppointment = { appointment_id: undefined, branch, date, time, status: "pending" as const };
+  const newAppointment = { appointment_id: undefined, branch, date, time, status: "pending" as const, reference_no: undefined };
       setCurrentAppointment(newAppointment);
 
       await fetchCurrentAppointment();
@@ -319,7 +326,14 @@ export default function BookingScreen() {
   };
 
   const appointment = currentAppointment || defaultAppointment;
-  
+  const selectedBranchInfo = branch ? branchData.find(b => b.branch_id === branch) : null;
+  const branchFacebookUrl =
+    selectedBranchInfo?.facebook_link ||
+    selectedBranchInfo?.fb_link ||
+    selectedBranchInfo?.facebook ||
+    selectedBranchInfo?.facebookPage ||
+    selectedBranchInfo?.facebook_url;
+
   // Only disable booking if there's a future/today appointment that's pending or approved
   // OR if credibility is 75 or below
   const isBookingDisabled = 
@@ -364,6 +378,17 @@ export default function BookingScreen() {
             style={styles.dropdown}
           />
         </View>
+
+        {branchFacebookUrl && (
+          <TouchableOpacity
+            style={styles.facebookLinkButton}
+            onPress={() => Linking.openURL(branchFacebookUrl)}
+            activeOpacity={0.85}
+          >
+            <FontAwesome name="facebook-square" size={20} color="#1B4D90" style={styles.facebookIcon} />
+            <Text style={styles.facebookLinkText}>View Branch Facebook Page</Text>
+          </TouchableOpacity>
+        )}
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <DateInput value={date} onChange={setDate} />
@@ -482,5 +507,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#721C24',
     lineHeight: 20,
+  },
+  facebookLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  facebookIcon: {
+    marginRight: 8,
+  },
+  facebookLinkText: {
+    color: '#1B4D90',
+    fontWeight: '600',
   },
 });

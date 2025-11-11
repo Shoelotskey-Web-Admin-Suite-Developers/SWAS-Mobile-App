@@ -23,6 +23,7 @@ type Appointment = {
   date?: Date | string | null;
   time?: Date | string | null;
   status: AppointmentStatus | string;
+  reference_no?: string;
 };
 
 type Branch = {
@@ -190,7 +191,8 @@ export default function AppointmentCard({
     ? `${branchInfo.branch_name} — ${branchInfo.location}`
     : appointment.branch || 'No branch selected';
   const statusNormalized = (appointment.status || '').toString().toLowerCase();
-  
+  const referenceSegments = appointment.reference_no ? appointment.reference_no.split('-') : [];
+
   // Don't show pending or approved appointments if the date has passed
   if (isAppointmentPast() && (statusNormalized === 'pending' || statusNormalized === 'approved')) {
     return (
@@ -212,6 +214,23 @@ export default function AppointmentCard({
         </Text>
       </View>
 
+      {(statusNormalized === 'pending' || statusNormalized === 'approved') && appointment.reference_no && (
+        <View style={styles.referenceWrapper}>
+          <Text style={styles.referenceLabel}>Reference</Text>
+          <View style={styles.referenceSegmentsRow}>
+            {referenceSegments.map((part, idx) => (
+              <React.Fragment key={`${part}-${idx}`}>
+                <View style={styles.referenceSegment}>
+                  <Text style={styles.referenceSegmentText}>{part}</Text>
+                </View>
+                {idx !== referenceSegments.length - 1 && (
+                  <Text style={styles.referenceDash}>-</Text>
+                )}
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+      )}
       <Text style={styles.detail}>🏢  {branchDisplay}</Text>
       {branchesLoading && <Text style={[styles.detail, { color: '#666' }]}>Loading branch info…</Text>}
       {branchesError && <Text style={[styles.detail, { color: '#b00' }]}>{branchesError}</Text>}
@@ -287,6 +306,43 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 14,
     color: '#333',
+  },
+  referenceWrapper: {
+    marginTop: 10,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#F5F8FF',
+    alignItems: 'center',
+  },
+  referenceLabel: {
+    fontSize: 12,
+    color: '#274060',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontWeight: '600',
+  },
+  referenceSegmentsRow: {
+    flexDirection: 'row',
+    marginTop: 6,
+    alignItems: 'center',
+  },
+  referenceSegment: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  referenceDash: {
+    marginHorizontal: 6,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#274060',
+  },
+  referenceSegmentText: {
+    color: '#274060',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   actionsRow: {
     flexDirection: 'row',

@@ -12,6 +12,44 @@ const WATCH_TARGETS: WatchTarget[] = [
   {
     collectionName: "appointments",
     event: "appointmentUpdated",
+    handleChange: (change, io) => {
+      let appointmentId: string | null = null;
+      let customerId: string | null = null;
+      let fullDocument: any = null;
+
+      if (["insert", "update", "replace"].includes(change.operationType)) {
+        const doc = (change as any).fullDocument;
+        if (doc) {
+          appointmentId = doc.appointment_id || String(doc._id);
+          customerId = doc.cust_id;
+          fullDocument = doc;
+        }
+      } else if (change.operationType === "delete" && change.documentKey?._id) {
+        appointmentId = String(change.documentKey._id);
+      }
+
+      if (!appointmentId) {
+        console.warn("⚠️ Unable to resolve appointment_id for appointments change:", change);
+        return;
+      }
+
+      const payload = {
+        appointmentId,
+        operationType: change.operationType,
+        documentKey: change.documentKey,
+        fullDocument,
+        updateDescription: change.updateDescription,
+        customerId,
+      };
+
+      io.emit("appointmentUpdated", payload);
+
+      if (customerId) {
+        io.to(`customer:${customerId}`).emit("appointmentUpdated", payload);
+      }
+
+      console.log(`📅 Appointment ${change.operationType}:`, appointmentId);
+    },
   },
   {
     collectionName: "announcements",

@@ -28,9 +28,24 @@ export default function AnnouncementsModal({ visible, onClose }: Props) {
     <Modal visible={visible} animationType="fade" transparent>
       <View style={styles.overlay}>
         <ThemedView style={styles.modal}>
-          <ThemedText type="titleSmall" style={styles.header}>
-            Announcements
-          </ThemedText>
+          <View style={styles.header}>
+            <View>
+              <ThemedText type="titleSmall" style={styles.headerTitle}>
+                Announcements
+              </ThemedText>
+              <ThemedText type="default" style={styles.headerSubtitle}>
+                Stay updated with SWAS
+              </ThemedText>
+            </View>
+            <Pressable
+              accessibilityLabel="Close announcements"
+              accessibilityRole="button"
+              onPress={onClose}
+              style={styles.closeBtn}
+            >
+              <Ionicons name="close" size={22} color="#D11315" />
+            </Pressable>
+          </View>
 
           <ScrollView contentContainerStyle={styles.list}>
             {!loading && (!announcements || announcements.length === 0) ? (
@@ -44,58 +59,66 @@ export default function AnnouncementsModal({ visible, onClose }: Props) {
               </View>
             ) : (
               announcements.map(announcement => {
-              const isRead = readIds.includes(announcement.id);
-              const isExpanded = expandedIds.includes(announcement.id);
+                const isRead = readIds.includes(announcement.id);
+                const isExpanded = expandedIds.includes(announcement.id);
 
-              return (
-                <Pressable
-                  key={announcement.id}
-                  style={styles.card}
-                  onPress={() => toggleExpand(announcement.id)}
-                >
-                  <View style={styles.topRow}>
-                    <View>
-                      <ThemedText type="button" style={styles.date}>
-                        Posted on {announcement.date}
-                      </ThemedText>
-                      {announcement.branchName ? (
+                return (
+                  <Pressable
+                    accessibilityLabel={`${announcement.title}. ${isExpanded ? 'Collapse' : 'Expand'} announcement`}
+                    accessibilityRole="button"
+                    key={announcement.id}
+                    style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                    onPress={() => toggleExpand(announcement.id)}
+                  >
+                    <View style={styles.topRow}>
+                      <View style={styles.dateRow}>
+                        <Ionicons name="megaphone-outline" size={16} color="#D11315" />
+                        <ThemedText type="button" style={styles.date}>
+                          Posted {announcement.date}
+                        </ThemedText>
+                      </View>
+                      {!isRead && (
+                        <View style={styles.unreadBadge}>
+                          <ThemedText type="option" style={styles.excl}>!</ThemedText>
+                          <ThemedText type="option" style={styles.unreadText}>New</ThemedText>
+                        </View>
+                      )}
+                    </View>
+
+                    {announcement.branchName ? (
+                      <View style={styles.branchRow}>
+                        <Ionicons name="location-outline" size={14} color="#6b6b6b" />
                         <ThemedText type="subtitle2" style={styles.branchName}>
                           {announcement.branchName}
                         </ThemedText>
-                      ) : null}
-                    </View>
-                    {!isRead && (
-                      <View style={styles.unreadDot}>
-                        <ThemedText type="option" style={styles.excl}>
-                          !
-                        </ThemedText>
                       </View>
-                    )}
-                  </View>
+                    ) : null}
 
-                  <ThemedText
-                    type="button"
-                    style={styles.title}
-                    numberOfLines={isExpanded ? undefined : 1}
-                    ellipsizeMode={isExpanded ? 'clip' : 'tail'}
-                  >
-                    {announcement.title}
-                  </ThemedText>
-
-                  {isExpanded && (
-                    <ThemedText type="default" style={styles.desc}>
-                      {announcement.description}
+                    <ThemedText
+                      type="button"
+                      style={styles.title}
+                      numberOfLines={isExpanded ? undefined : 2}
+                      ellipsizeMode={isExpanded ? 'clip' : 'tail'}
+                    >
+                      {announcement.title}
                     </ThemedText>
-                  )}
-                </Pressable>
-              );
+
+                    {isExpanded && (
+                      <ThemedText type="default" style={styles.desc}>
+                        {announcement.description}
+                      </ThemedText>
+                    )}
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={18}
+                      color="#919191"
+                      style={styles.expandIcon}
+                    />
+                  </Pressable>
+                );
               })
             )}
           </ScrollView>
-
-          <Pressable onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={24} color="white" />
-          </Pressable>
         </ThemedView>
       </View>
     </Modal>
@@ -113,67 +136,97 @@ const styles = StyleSheet.create({
     width: '90%',
     maxHeight: '85%',
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
   },
   header: {
-    textAlign: 'center',
-    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  headerTitle: {
     color: '#D11315',
   },
+  headerSubtitle: {
+    color: '#777',
+    fontSize: 12,
+    marginTop: 2,
+  },
   list: {
-    paddingBottom: 20,
+    paddingBottom: 4,
   },
   card: {
-    backgroundColor: '#f2f2f2',
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: '#fff',
+    borderColor: '#e8e8e8',
+    borderRadius: 14,
+    borderWidth: 1,
+    elevation: 1,
     marginBottom: 12,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
   },
+  cardPressed: { opacity: 0.78 },
   topRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
+  dateRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   date: {
-    color: '#919191',
+    color: '#D11315',
     fontSize: 14,
-    marginBottom: -7,
+    marginBottom: 0,
   },
+  branchRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
   branchName: {
-    color: '#9a9a9aff',
+    color: '#6b6b6b',
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 0,
   },
   title: {
-    marginTop: 4,
     color: '#000000ff',
     fontSize: 17,
+    lineHeight: 23,
+    marginTop: 10,
+    paddingRight: 22,
   },
   desc: {
+    color: '#444',
+    lineHeight: 20,
     marginTop: 8,
-    color: '#000000ff',
+    paddingRight: 4,
   },
-  unreadDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#D11315',
-    justifyContent: 'center',
+  closeBtn: {
     alignItems: 'center',
+    backgroundColor: '#fff1f1',
+    borderRadius: 18,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  unreadBadge: {
+    alignItems: 'center',
+    backgroundColor: '#D11315',
+    borderRadius: 10,
+    flexDirection: 'row',
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   excl: {
     color: 'white',
+    fontSize: 11,
     fontWeight: 'bold',
-    fontSize: 12,
   },
-  closeBtn: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: '#D11315',
-    padding: 8,
-    borderRadius: 20,
+  unreadText: {
+    color: 'white',
+    fontSize: 10,
   },
+  expandIcon: { position: 'absolute', bottom: 14, right: 14 },
   placeholder: {
     padding: 24,
     alignItems: 'center',

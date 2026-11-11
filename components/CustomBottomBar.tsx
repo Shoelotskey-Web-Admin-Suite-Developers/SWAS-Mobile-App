@@ -7,7 +7,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   withTiming,
@@ -17,25 +17,55 @@ import Animated, {
 
 const { width } = Dimensions.get('window');
 const height = 80;
+const tabCenters = [
+  width * 0.173,
+  width * 0.388,
+  width * 0.605,
+  width * 0.823,
+];
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const CustomBottomBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
-  const tabCount = state.routes.length;
-  const activeIndex = state.index;
+type TabButtonProps = {
+  Icon?: (props: { focused: boolean; color: string; size: number }) => React.ReactNode;
+  isFocused: boolean;
+  label: string;
+  onPress: () => void;
+};
 
-  const tabCenters = [
-    width * 0.173,
-    width * 0.388,
-    width * 0.605,
-    width * 0.823,
-  ];
+const TabButton = ({ Icon, isFocused, label, onPress }: TabButtonProps) => {
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: withTiming(isFocused ? -10 : 0, { duration: 300 }) }],
+  }));
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={styles.tabButton}
+      activeOpacity={0.8}
+    >
+      <Animated.View style={animatedIconStyle}>
+        {Icon?.({
+          color: isFocused ? '#D50000' : '#fff',
+          focused: isFocused,
+          size: 24,
+        })}
+      </Animated.View>
+      <Text style={[styles.label, isFocused && styles.labelFocused]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+const CustomBottomBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
+  const activeIndex = state.index;
 
   const centerX = useSharedValue(tabCenters[activeIndex]);
 
   useEffect(() => {
     centerX.value = withTiming(tabCenters[activeIndex], { duration: 300 });
-  }, [activeIndex]);
+  }, [activeIndex, centerX]);
 
   const animatedProps = useAnimatedProps(() => {
     const cx = centerX.value;
@@ -63,6 +93,22 @@ const CustomBottomBar = ({ state, descriptors, navigation }: BottomTabBarProps) 
 
   return (
     <View style={styles.wrapper}>
+      <Svg
+        width={width}
+        height={120}
+        viewBox={`0 0 ${width} 120`}
+        style={styles.fadeSvg}
+        pointerEvents="none"
+      >
+        <Defs>
+          <LinearGradient id="bottomFade" x1="0%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor="#F2F2F2" stopOpacity="0" />
+            <Stop offset="100%" stopColor="#F2F2F2" stopOpacity="1" />
+          </LinearGradient>
+        </Defs>
+        <Rect width={width} height={120} fill="url(#bottomFade)" />
+      </Svg>
+
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={styles.svg}>
         <AnimatedPath fill="#D50000" animatedProps={animatedProps} />
       </Svg>
@@ -85,30 +131,18 @@ const CustomBottomBar = ({ state, descriptors, navigation }: BottomTabBarProps) 
           };
 
           const Icon = options.tabBarIcon;
-          const label = options.tabBarLabel ?? options.title ?? route.name;
-
-          // Animate icon elevation
-          const animatedIconStyle = useAnimatedStyle(() => ({
-            transform: [{ translateY: withTiming(isFocused ? -10 : 0, { duration: 300 }) }],
-          }));
+          const label = typeof options.tabBarLabel === 'string'
+            ? options.tabBarLabel
+            : options.title ?? route.name;
 
           return (
-            <TouchableOpacity
+            <TabButton
               key={route.key}
+              Icon={Icon}
+              isFocused={isFocused}
+              label={label}
               onPress={onPress}
-              style={styles.tabButton}
-              activeOpacity={0.8}
-            >
-              <Animated.View style={animatedIconStyle}>
-                {Icon && Icon({
-                  color: isFocused ? '#D50000' : '#fff', focused: isFocused,
-                  size: 0
-                })}
-              </Animated.View>
-              <Text style={[styles.label, isFocused && styles.labelFocused]}>
-                {label}
-              </Text>
-            </TouchableOpacity>
+            />
           );
         })}
       </View>
@@ -124,10 +158,17 @@ const styles = StyleSheet.create({
     height,
     alignItems: 'center',
     justifyContent: 'flex-end',
+    zIndex: 10,
+  },
+  fadeSvg: {
+    position: 'absolute',
+    bottom: 40,
+    zIndex: 0,
   },
   svg: {
     position: 'absolute',
     bottom: 0,
+    zIndex: 1,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -136,6 +177,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-evenly',
     alignItems: 'center',
     paddingHorizontal: 20,
+    zIndex: 2,
   },
   tabButton: {
     alignItems: 'center',

@@ -5,7 +5,7 @@ import HeaderConfig from '@/components/HeaderConfig';
 import TimeInput from '@/components/TimeInput';
 import { getUnavailability } from '@/utils/api/getUnavailability';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DropDownPicker, { ItemType } from 'react-native-dropdown-picker';
 import { FontAwesome } from '@expo/vector-icons';
 
@@ -306,6 +306,7 @@ export default function BookingScreen() {
     selectedBranchInfo?.facebook ||
     selectedBranchInfo?.facebookPage ||
     selectedBranchInfo?.facebook_url;
+  const branchGmapUrl = selectedBranchInfo?.gmap_link;
 
   // Only disable booking if there's a future/today appointment that's pending or approved
   const isBookingDisabled = 
@@ -316,7 +317,12 @@ export default function BookingScreen() {
     <>
       <HeaderConfig title="Booking" />
       <View style={styles.container}>
-  <AppointmentCard appointment={appointment} onCanceled={fetchCurrentAppointment} />
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <AppointmentCard appointment={appointment} onCanceled={fetchCurrentAppointment} />
 
         <Text style={styles.label}>Select Branch*</Text>
         <View style={styles.selectWrapper}>
@@ -332,15 +338,45 @@ export default function BookingScreen() {
           />
         </View>
 
-        {branchFacebookUrl && (
-          <TouchableOpacity
-            style={styles.facebookLinkButton}
-            onPress={() => Linking.openURL(branchFacebookUrl)}
-            activeOpacity={0.85}
-          >
-            <FontAwesome name="facebook-square" size={20} color="#1B4D90" style={styles.facebookIcon} />
-            <Text style={styles.facebookLinkText}>View Branch Facebook Page</Text>
-          </TouchableOpacity>
+        {(branchFacebookUrl || branchGmapUrl) && (
+          <View style={styles.branchLinksSection}>
+            <Text style={styles.branchLinksOptional}>View branch information</Text>
+            {branchFacebookUrl && (
+              <TouchableOpacity
+                style={styles.branchLinkButton}
+                onPress={() => Linking.openURL(branchFacebookUrl)}
+                activeOpacity={0.8}
+                accessibilityRole="link"
+                accessibilityLabel="Open branch Facebook page"
+              >
+                <View style={[styles.branchLinkIcon, styles.facebookIconContainer]}>
+                  <FontAwesome name="facebook-square" size={19} color="#1B4D90" />
+                </View>
+                <View style={styles.branchLinkContent}>
+                  <Text style={styles.branchLinkTitle}>Facebook</Text>
+                </View>
+                <FontAwesome name="chevron-right" size={14} color="#8A8A8A" />
+              </TouchableOpacity>
+            )}
+
+            {branchGmapUrl && (
+              <TouchableOpacity
+                style={styles.branchLinkButton}
+                onPress={() => Linking.openURL(branchGmapUrl)}
+                activeOpacity={0.8}
+                accessibilityRole="link"
+                accessibilityLabel="Open branch location in Google Maps"
+              >
+                <View style={[styles.branchLinkIcon, styles.gmapIconContainer]}>
+                  <FontAwesome name="map-marker" size={19} color="#CE1616" />
+                </View>
+                <View style={styles.branchLinkContent}>
+                  <Text style={styles.branchLinkTitle}>Google Maps</Text>
+                </View>
+                <FontAwesome name="chevron-right" size={14} color="#8A8A8A" />
+              </TouchableOpacity>
+            )}
+          </View>
         )}
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -364,6 +400,7 @@ export default function BookingScreen() {
             Cannot book a new appointment because you already have an upcoming {appointment.status} appointment.
           </Text>
         )}
+        </ScrollView>
       </View>
 
       <ErrorModal
@@ -379,9 +416,12 @@ export default function BookingScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
     backgroundColor: '#F2F2F2',
     flex: 1,
+  },
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 100,
   },
   label: {
     fontWeight: '600',
@@ -419,19 +459,46 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: 'white',
   },
-  facebookLinkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  branchLinksSection: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    paddingVertical: 10,
     marginBottom: 12,
+    paddingHorizontal: 12,
   },
-  facebookIcon: {
-    marginRight: 8,
+  branchLinksOptional: {
+    color: '#777777',
+    fontSize: 12,
+    paddingTop: 10,
+    paddingBottom: 2,
   },
-  facebookLinkText: {
-    color: '#1B4D90',
+  branchLinkButton: {
+    alignItems: 'center',
+    borderTopColor: '#EEEEEE',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    minHeight: 46,
+    paddingVertical: 4,
+  },
+  branchLinkIcon: {
+    alignItems: 'center',
+    borderRadius: 16,
+    height: 30,
+    justifyContent: 'center',
+    marginRight: 10,
+    width: 30,
+  },
+  facebookIconContainer: {
+    backgroundColor: '#E8F0FE',
+  },
+  gmapIconContainer: {
+    backgroundColor: '#FDEAEA',
+  },
+  branchLinkContent: {
+    flex: 1,
+  },
+  branchLinkTitle: {
+    color: '#212934',
+    fontSize: 14,
     fontWeight: '600',
   },
 });

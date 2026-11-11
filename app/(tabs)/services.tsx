@@ -1,38 +1,21 @@
-import React, { useState } from 'react';
-import { View, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
 import HeaderConfig from '@/components/HeaderConfig';
 import ServicesModalCard from '@/components/ServicesModalCard';
+import { ThemedText } from '@/components/ThemedText';
+import { useServices } from '@/hooks/useServices';
+import { useMemo, useState } from 'react';
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-const services = [
-  {
-    title: 'Basic Cleaning',
-    subtitle: '',
-    price: '₱325 - ₱550',
-    image: require('@/assets/images/services-basic_cleaning.png'),
-  },
-  {
-    title: 'Minor Reglue',
-    subtitle: '(with basic cleaning)',
-    price: '₱450',
-    image: require('@/assets/images/services-minor_reglue.png'),
-  },
-  {
-    title: 'Full Reglue',
-    subtitle: '(with basic cleaning)',
-    price: '₱575',
-    image: require('@/assets/images/services-full_reglue.png'),
-  },
-  {
-    title: 'Color Renewal',
-    subtitle: '(with basic cleaning)',
-    price: '₱600 - ₱700',
-    image: require('@/assets/images/services-color_renewal.png'),
-  },
-];
+type ServiceModalDetail = {
+  title: string;
+  imageSource: ReturnType<typeof require>;
+  price: string;
+  days: string;
+  description: string;
+  additionalDetails: { label: string; price: string; duration: string }[];
+};
 
 // ✅ Define modal content for each service
-const modalDetailsMap = {
+const modalDetailsMap: Record<string, ServiceModalDetail> = {
   'Basic Cleaning': {
     title: 'Basic Cleaning',
     imageSource: require('@/assets/images/services-modal-basic_cleaning.png'),
@@ -61,8 +44,8 @@ const modalDetailsMap = {
     days: '25',
     description: 'Complete sole reattachment for worn-out kicks, finished with a basic cleaning for a fresh look.',
     additionalDetails: [
-      { label: 'Single layer Only'},
-      { label: 'Additional Per layer', price: '+ ₱150', duration: '₱750' },
+      { label: 'Single layer Only', price: '₱575', duration: '25 days' },
+      { label: 'Additional Per layer', price: '+ ₱150', duration: '25 days' },
     ],
   },
   'Color Renewal': {
@@ -72,22 +55,65 @@ const modalDetailsMap = {
     days: '20',
     description: 'Restores faded color and vibrance, paired with basic cleaning for a refreshed look',
     additionalDetails: [
-      { label: '2 Colors', price: '+₱275', duration: '₱600' },
-      { label: '3 Colors', price: '+₱375', duration: '₱700' },
+      { label: '2 Colors', price: '₱275', duration: '20 days' },
+      { label: '3 Colors', price: '₱375', duration: '20 days' },
     ],
   },
 };
 
 export default function ServicesScreen() {
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const { services, loading, error } = useServices();
 
-  const handleCardPress = (title: string) => {
-    setSelectedService(title);
+  const serviceCards = useMemo(() => [
+    {
+      serviceId: 'SERVICE-1',
+      title: 'Basic Cleaning',
+      subtitle: '',
+      image: require('@/assets/images/services-basic_cleaning.png'),
+    },
+    {
+      serviceId: 'SERVICE-2',
+      title: 'Minor Reglue',
+      subtitle: '(with basic cleaning)',
+      image: require('@/assets/images/services-minor_reglue.png'),
+    },
+    {
+      serviceId: 'SERVICE-3',
+      title: 'Full Reglue',
+      subtitle: '(with basic cleaning)',
+      image: require('@/assets/images/services-full_reglue.png'),
+    },
+    {
+      serviceId: 'SERVICE-4',
+      title: 'Color Renewal',
+      subtitle: '(with basic cleaning)',
+      image: require('@/assets/images/services-color_renewal.png'),
+    },
+  ], []);
+
+  const handleCardPress = (serviceId: string) => {
+    setSelectedService(serviceId);
   };
 
   const closeModal = () => setSelectedService(null);
 
-  const selectedModalData = selectedService ? modalDetailsMap[selectedService] : null;
+  const selectedServiceCard = selectedService
+    ? serviceCards.find(card => card.serviceId === selectedService)
+    : null;
+  const selectedModalData = selectedServiceCard
+    ? modalDetailsMap[selectedServiceCard.title]
+    : null;
+  const selectedServiceRecord = selectedService ? services[selectedService] : null;
+  const formatPrice = (price: number | undefined) => price === undefined ? '—' : `₱${price.toLocaleString()}`;
+  const getPrice = (serviceId: string) => formatPrice(services[serviceId]?.service_base_price);
+  const priceRange = (firstId: string, secondId: string) => {
+    const first = services[firstId]?.service_base_price;
+    const second = services[secondId]?.service_base_price;
+    return first === undefined || second === undefined
+      ? '—'
+      : `₱${Math.min(first, second).toLocaleString()} – ₱${Math.max(first, second).toLocaleString()}`;
+  };
 
   return (
     <>
@@ -99,12 +125,15 @@ export default function ServicesScreen() {
             Details and Price
           </ThemedText>
 
+          {loading && <ThemedText>Loading services...</ThemedText>}
+          {error && <ThemedText style={styles.errorText}>{error}</ThemedText>}
+
           <View style={styles.grid}>
-            {services.map((item, index) => (
+            {serviceCards.map((item) => (
               <TouchableOpacity
-                key={index}
+                key={item.serviceId}
                 style={styles.card}
-                onPress={() => handleCardPress(item.title)}
+                onPress={() => handleCardPress(item.serviceId)}
               >
                 <Image source={item.image} style={styles.cardImage} />
                 <View style={styles.cardOverlay}>
@@ -117,7 +146,9 @@ export default function ServicesScreen() {
                     </ThemedText>
                   )}
                   <ThemedText type="button" style={styles.cardPrice}>
-                    {item.price}
+                    {item.serviceId === 'SERVICE-4'
+                      ? priceRange('SERVICE-4', 'SERVICE-5')
+                      : getPrice(item.serviceId)}
                   </ThemedText>
                   <ThemedText
                     type="link"
@@ -139,16 +170,33 @@ export default function ServicesScreen() {
       </View>
 
       {/* ✅ Dynamic Modal */}
-      {selectedModalData && (
+      {selectedModalData && selectedServiceRecord && (
         <ServicesModalCard
           visible={true}
           onClose={closeModal}
           title={selectedModalData.title}
           imageSource={selectedModalData.imageSource}
-          price={selectedModalData.price}
+          price={
+            selectedService === 'SERVICE-4'
+              ? priceRange('SERVICE-4', 'SERVICE-5')
+              : getPrice(selectedServiceRecord.service_id)
+          }
           days={selectedModalData.days}
           description={selectedModalData.description}
-          additionalDetails={selectedModalData.additionalDetails}
+          additionalDetails={selectedModalData.additionalDetails.map(detail => {
+            const priceByLabel: Record<string, string> = {
+              'Basic Cleaning': getPrice('SERVICE-1'),
+              Unyellowing: `+${getPrice('SERVICE-8')}`,
+              'Minor Retouch': `+${getPrice('SERVICE-9')}`,
+              'Minor Restoration': `+${getPrice('SERVICE-6')}`,
+              'Additional Per layer': `+ ${getPrice('SERVICE-7')}`,
+              '2 Colors': `${getPrice('SERVICE-4')}`,
+              '3 Colors': `${getPrice('SERVICE-5')}`,
+            };
+            return priceByLabel[detail.label]
+              ? { ...detail, price: priceByLabel[detail.label] }
+              : detail;
+          })}
         />
       )}
     </>
@@ -213,5 +261,9 @@ const styles = StyleSheet.create({
   noteText: {
     color: '#333',
     fontSize: 12,
+  },
+  errorText: {
+    color: '#CE1616',
+    marginBottom: 12,
   },
 });

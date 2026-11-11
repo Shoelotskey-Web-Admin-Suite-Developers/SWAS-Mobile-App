@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   model: {
-    marginTop: 2,
-    fontSize: 24,
+    marginTop: 8,
+    fontSize: 22,
   },
   ready: {
     marginTop: 8,

@@ -5,11 +5,12 @@ import { unregisterPushToken } from '@/utils/notifPermission'; // 👈 import
 import { clearUserId, getUserId } from '@/utils/session';
 import { router } from 'expo-router';
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function GreetingHeader() {
   const [firstName, setFirstName] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
 
   React.useEffect(() => {
     let mounted = true;
@@ -38,6 +39,7 @@ export default function GreetingHeader() {
     };
   }, []);
   const handleLogout = async () => {
+    setShowLogoutModal(false);
     try {
       // 1️⃣ Unregister push token from backend
       await unregisterPushToken();
@@ -63,8 +65,10 @@ export default function GreetingHeader() {
       </ThemedView>
 
       <TouchableOpacity
+        accessibilityLabel="Log out"
+        accessibilityRole="button"
         style={styles.logoutButton}
-        onPress={handleLogout}
+        onPress={() => setShowLogoutModal(true)}
       >
         <IconSymbol
           name="rectangle.portrait.and.arrow.right"
@@ -72,6 +76,56 @@ export default function GreetingHeader() {
           color="#D11315"
         />
       </TouchableOpacity>
+
+      <Modal
+        visible={showLogoutModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            accessibilityViewIsModal
+            style={styles.logoutModal}
+          >
+            <View style={styles.logoutIcon}>
+              <IconSymbol
+                name="rectangle.portrait.and.arrow.right"
+                size={28}
+                color="#D11315"
+              />
+            </View>
+            <ThemedText type="titleSmall" style={styles.modalTitle}>
+              Log out?
+            </ThemedText>
+            <ThemedText type="default" style={styles.modalMessage}>
+              Are you sure you want to log out of your account?
+            </ThemedText>
+            <View style={styles.modalActions}>
+              <Pressable
+                accessibilityLabel="Cancel logout"
+                accessibilityRole="button"
+                onPress={() => setShowLogoutModal(false)}
+                style={styles.cancelButton}
+              >
+                <ThemedText type="button" style={styles.cancelText}>
+                  Cancel
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityLabel="Confirm logout"
+                accessibilityRole="button"
+                onPress={handleLogout}
+                style={styles.confirmButton}
+              >
+                <ThemedText type="button" style={styles.confirmText}>
+                  Log out
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -93,5 +147,66 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#00000099',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  logoutModal: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
+  },
+  logoutIcon: {
+    alignItems: 'center',
+    backgroundColor: '#fff1f1',
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
+    marginBottom: 14,
+    width: 56,
+  },
+  modalTitle: {
+    color: '#171717',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    color: '#6b6b6b',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 24,
+    width: '100%',
+  },
+  cancelButton: {
+    alignItems: 'center',
+    backgroundColor: '#f2f2f2',
+    borderRadius: 12,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 46,
+  },
+  cancelText: {
+    color: '#555',
+  },
+  confirmButton: {
+    alignItems: 'center',
+    backgroundColor: '#D11315',
+    borderRadius: 12,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 46,
+  },
+  confirmText: {
+    color: '#fff',
   },
 });

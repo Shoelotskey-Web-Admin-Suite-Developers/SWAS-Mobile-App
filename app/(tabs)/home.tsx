@@ -5,10 +5,11 @@ import HeroLogo from '@/components/HeroLogo';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import PromosModal from '@/components/PromosModal';
 import QuickActionsRow from '@/components/QuickActionsRow';
-import ServicesCarousel from '@/components/ServicesCarousel';
+import ServicesCarousel, { HomeService } from '@/components/ServicesCarousel';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
+import { useServices } from '@/hooks/useServices';
 import { registerPushToken } from '@/utils/notifPermission';
 
 
@@ -20,7 +21,36 @@ export default function HomeScreen() {
   const [showModal, setShowModal] = useState(false);
   const [showPromosModal, setShowPromosModal] = useState(false);
   const { announcements, loading } = useAnnouncements();
+  const { services } = useServices();
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const formatPrice = (serviceId: string) => {
+    const price = services[serviceId]?.service_base_price;
+    return price === undefined ? '—' : `₱${price.toLocaleString()}`;
+  };
+
+  const homeServices: HomeService[] = [
+    {
+      image: require('@/assets/images/home-basic_cleaning.png'),
+      name: 'Basic Cleaning',
+      price: formatPrice('SERVICE-1'),
+    },
+    {
+      image: require('@/assets/images/home-minor_reglue.png'),
+      name: 'Minor Reglue (with basic cleaning)',
+      price: formatPrice('SERVICE-2'),
+    },
+    {
+      image: require('@/assets/images/home-full_reglue.png'),
+      name: 'Full Reglue (with basic cleaning)',
+      price: formatPrice('SERVICE-3'),
+    },
+    {
+      image: require('@/assets/images/home-color_renewal.png'),
+      name: 'Color Renewal (with basic cleaning)',
+      price: formatPrice('SERVICE-4'),
+    },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -71,7 +101,7 @@ export default function HomeScreen() {
               <ThemedText type="link">View All {'>'}</ThemedText>
             </TouchableOpacity>
           </View>
-          <ServicesCarousel />
+          <ServicesCarousel services={homeServices} />
         </ThemedView>
       </ParallaxScrollView>
 
@@ -88,6 +118,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 100,
   },
   divider: {
     height: 1,

@@ -8,12 +8,14 @@ import { getServiceName } from '@/utils/api/getServiceName';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const styles = StyleSheet.create({
   container: {
     padding: 15,
+    paddingBottom: 100,
     backgroundColor: '#F2F2F2',
+    flexGrow: 1,
   },
   sectionHeader: {
     color: '#C40000',
@@ -24,7 +26,6 @@ const styles = StyleSheet.create({
 });
 
 export default function TrackServiceScreen() {
-  const insets = useSafeAreaInsets();
   const [lineItems, setLineItems] = useState<any[]>([]);
   const [serviceNames, setServiceNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -218,7 +219,7 @@ export default function TrackServiceScreen() {
 
       {/* ensure items are not clipped by the bottom tab/navigation bar */}
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['left', 'right', 'bottom']}>
-        <ScrollView contentContainerStyle={[styles.container, { paddingBottom: Math.max(insets.bottom, 80) }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <ThemedText type="titleSmall" style={styles.sectionHeader}>
             Current Service Request ({lineItems.length})
           </ThemedText>

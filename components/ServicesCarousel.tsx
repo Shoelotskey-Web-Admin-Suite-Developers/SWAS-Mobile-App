@@ -1,8 +1,17 @@
 import ServiceCard from '@/components/ServiceCard';
-import { services } from '@/constants/services';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ImageSourcePropType, ScrollView, StyleSheet } from 'react-native';
 
-export default function ServicesCarousel() {
+export type HomeService = {
+  image: ImageSourcePropType;
+  name: string;
+  price: string;
+};
+
+type Props = {
+  services: HomeService[];
+};
+
+export default function ServicesCarousel({ services }: Props) {
   return (
     <ScrollView
       horizontal

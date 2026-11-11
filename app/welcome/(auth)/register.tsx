@@ -126,16 +126,27 @@ export default function RegisterScreen() {
             />
           </ThemedView>
 
-          <ThemedText type="titleSmall" style={styles.label}>Birthdate (optional)</ThemedText>
-          <Pressable onPress={() => setShowPicker(true)}>
-            <TextInput
-              style={styles.input}
-              placeholder="DD-MM-YYYY"
-              value={formatDate(birthday)}
-              editable={false}
-              pointerEvents="none"
-            />
-          </Pressable>
+          <ThemedText type="titleSmall" style={styles.label}>Birthdate</ThemedText>
+          <View style={styles.birthdayField}>
+            <Pressable onPress={() => setShowPicker(true)}>
+              <TextInput
+                style={[styles.input, birthday && styles.birthdayInputWithClear]}
+                placeholder="DD-MM-YYYY"
+                value={formatDate(birthday)}
+                editable={false}
+                pointerEvents="none"
+              />
+            </Pressable>
+            {birthday && (
+              <TouchableOpacity
+                style={styles.clearBirthdayButton}
+                onPress={() => setBirthday(undefined)}
+                accessibilityLabel="Clear birthday"
+              >
+                <ThemedText style={styles.clearBirthdayText}>Clear</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {showPicker && (
             <DateTimePicker
@@ -213,6 +224,10 @@ const styles = StyleSheet.create({
   container: { padding: 24, paddingBottom: 50, justifyContent: 'center', flex: 1, paddingHorizontal: 40 },
   input: { width: '100%', borderColor: '#212934', borderBottomWidth: 1, padding: 10, marginBottom: 15, borderRadius: 6, fontFamily: 'Inter', backgroundColor: 'transparent' },
   inputDouble: { width: '48%', borderColor: '#212934', borderBottomWidth: 1, padding: 10, marginBottom: 15, borderRadius: 6, fontFamily: 'Inter', backgroundColor: 'transparent' },
+  birthdayField: { position: 'relative' },
+  birthdayInputWithClear: { paddingRight: 65 },
+  clearBirthdayButton: { position: 'absolute', right: 8, bottom: 23, padding: 4 },
+  clearBirthdayText: { fontSize: 13, fontWeight: '600' },
   footer: { marginTop: 'auto', alignItems: 'center', marginBottom: height * 0.05, gap: 16 },
   button: { backgroundColor: '#CE1616', paddingVertical: 12, borderRadius: 50, alignItems: 'center', width: '100%', elevation: 5 },
   link: { flexDirection: 'row', alignSelf: 'center' },
